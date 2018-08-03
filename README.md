@@ -29,7 +29,7 @@ Configure as desired at Administer->User configuration->Inactive users.
 
 Requires:
 --------
- - Drupal 6.x
+ - Drupal 8.x
  - Working crontab
 
 
