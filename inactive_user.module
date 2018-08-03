@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Contains inactive_user.module.
+ */
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Entity\EntityTypeInterface;
+
+define('DAY_MINUS_FIVE_MINUTES', (60 * 60 * 23) + (60 * 55));
+
+define('ONE_DAY', 60 * 60 * 24);
+define('TWO_DAYS', 60 * 60 * 24 * 2);
+define('THRE_DAYS', 60 * 60 * 24 * 3);
+
+define('ONE_WEEK', 60 * 60 * 24 * 7);
+define('TWO_WEEKS', 60 * 60 * 24 * 14);
+define('THRE_WEEKS', 60 * 60 * 24 * 21);
+define('FOUR_WEEKS', 60 * 60 * 24 * 28);
+
+define('ONE_MONTH', 60 * 60 * 24 * 30);
+define('TWO_MONTHS', 60 * 60 * 24 * 60);
+define('THRE_MONTHS', 60 * 60 * 24 * 90);
+define('SIX_MONTHS', 60 * 60 * 24 * 180);
+define('NINE_MONTHS', 60 * 60 * 24 * 270);
+
+define('ONE_YEAR', 60 * 60 * 24 * 365);
+define('ONE_AND_HALF_YEARS', 60 * 60 * 24 * 547);
+define('TWO_YEARS', 60 * 60 * 24 * 730);
+
+/**
+ * Implements hook_help().
+ */
+function inactive_user_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the inactive_user module.
+    case 'help.page.inactive_user':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The inactive_user module provides Drupal administrators with an automatic
+way to manage inactive user accounts.  This module has two goals:  to help
+keep users coming back to your site by reminding them when they\'ve been away
+for a configurable period of time, and to cleanup unused accounts.
+
+One or more of the following actions can be automatically taken for users that
+have exceeded configurable periods of inactivity:
+  - send an email to the user
+  - send an email to the site administrator
+  - block the account (a warning can first be issued, and notification can
+     be sent to the user and/or site administrator when the action occurs)
+  - delete the account (a warning can first be issued, and notification can
+     be sent to the user and/or site administrator when the action occurs)
+  - optionally prevent deletion of user that have created site content
+
+All events triggered by this module are logged via the watchdog.') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function inactive_user_cron() {
+  \Drupal::service('inactive_user.notify')->runCron();
+}
+
+/**
+ * Implements hook_entity_base_field_info().
+ *
+ * @param EntityTypeInterface $entity_type
+ *
+ * @return array
+ */
+function inactive_user_entity_base_field_info(EntityTypeInterface $entity_type) {
+  if ($entity_type->id() === 'user') {
+    // Add a property just to user.
+    $fields = [];
+    $fields['notified_admin'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('Admin notifier'))
+      ->setDescription(t('The user notifier flag.'));
+    $fields['notified_user'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('User notifier'))
+      ->setDescription(t('The user notifier flag.'));
+    $fields['warned_user_block_timestamp'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(t('Timestamp warning'))
+      ->setDescription(t('The warned user block timestamp.'));
+    $fields['notified_user_block'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('User block warning'))
+      ->setDescription(t('The user block warning flag.'));
+    $fields['notified_admin_block'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('Admin block warning'))
+      ->setDescription(t('The admin block warning flag.'));
+    $fields['warned_user_delete_timestamp'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(t('User delete timestamp'))
+      ->setDescription(t('The user delete timestamp.'));
+    $fields['protected'] = BaseFieldDefinition::create('boolean')
+      ->setLabel(t('User protected flag'))
+      ->setDescription(t('The user protected flag.'));
+
+    return $fields;
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "drupal/inactive_user",
+  "type": "drupal-module",
+  "description": "Inactive user module",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/inactive_user",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/inactive_user",
+    "source": "http://cgit.drupalcode.org/inactive_user"
+  },
+  "require": { }
+}

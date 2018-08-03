@@ -1,0 +1,11 @@
+
+inactive_user.inactive_user_admin_form:
+  path: '/admin/people/inactive-user'
+  defaults:
+    _form: '\Drupal\inactive_user\Form\InactiveUserAdminForm'
+    _title: 'Inactive User'
+  requirements:
+    _permission: 'administer inactive user'
+  options:
+    _admin_route: TRUE
+
