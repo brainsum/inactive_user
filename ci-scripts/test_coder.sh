@@ -1,20 +1,3 @@
-Skip to content
- 
-Search or jump to…
-
-Pull requests
-Issues
-Marketplace
-Explore
- @pedro-p Sign out
-4
-0 0 brainsum/commerce_gls
- Code  Issues 0  Pull requests 0  Projects 0  Wiki  Insights  Settings
-commerce_gls/ci-scripts/test_coder.sh
-baf1bd9  on Feb 17
-@pedro-p pedro-p coding standard check added via travis
-    
-Executable File  42 lines (33 sloc)  975 Bytes
 #!/bin/sh
 
 # ---------------------------------------------------------------------------- #
