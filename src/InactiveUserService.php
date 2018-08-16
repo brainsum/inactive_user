@@ -671,7 +671,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
    * @param object $user
    *   The user object from query.
    */
-  protected function deleteUser(array $user) {
+  protected function deleteUser($user) {
     $session_manager = \Drupal::service('session_manager');
     $session_manager->delete($user->id());
     db_delete('users')
