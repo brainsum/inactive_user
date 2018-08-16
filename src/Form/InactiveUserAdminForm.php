@@ -274,10 +274,10 @@ class InactiveUserAdminForm extends ConfigFormBase {
       }
     }
     if ($count == 1) {
-      $form_state->setError(['inactive_user_admin_email'], $this->t('%mail is not a valid e-mail address', array('%mail' => $invalid[0])));
+      $form_state->setError(['inactive_user_admin_email'], $this->t('%mail is not a valid e-mail address', ['%mail' => $invalid[0]]));
     }
     elseif ($count > 1) {
-      $form_state->setError('inactive_user_admin_email', $this->t('The following e-mail addresses are invalid: %mail', array('%mail' => implode(', ', $invalid))));
+      $form_state->setError('inactive_user_admin_email', $this->t('The following e-mail addresses are invalid: %mail', ['%mail' => implode(', ', $invalid)]));
     }
   }
 
@@ -317,7 +317,8 @@ class InactiveUserAdminForm extends ConfigFormBase {
   /**
    * The period option list.
    *
-   * @return array periodOptionList
+   * @return array
+   *   periodOptionList
    */
   protected function periodOptionList() {
     return [
@@ -339,7 +340,8 @@ class InactiveUserAdminForm extends ConfigFormBase {
   /**
    * The warn period option list.
    *
-   * @return array warnPeriodOptionList
+   * @return array
+   *   warnPeriodOptionList
    */
   protected function warnPeriodOptionList() {
     return [
