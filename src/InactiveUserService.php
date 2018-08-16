@@ -2,16 +2,22 @@
 
 namespace Drupal\inactive_user;
 
-use Drupal\Core\Database\Driver\mysql\Connection;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\Core\Logger\LoggerChannelFactoryInterface;
-use Drupal\Core\State\StateInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class InactiveUserService.
  */
 class InactiveUserService implements InactiveUserServiceInterface {
+
+  use StringTranslationTrait;
+
+  /**
+   * Symfony\Component\DependencyInjection\ContainerInterface definition.
+   *
+   * @var \Symfony\Component\DependencyInjection\ContainerInterface
+   */
+  protected $serviceContainer;
 
   /**
    * Drupal\Core\Database\Driver\mysql\Connection definition.
@@ -63,21 +69,36 @@ class InactiveUserService implements InactiveUserServiceInterface {
   protected $state;
 
   /**
+   * Constructs a SessionManager object.
+   *
+   * @var \Drupal\Core\StringTranslation\SessionManagerInterface
+   */
+  protected $sessionManager;
+
+  /**
+   * Constructs a EntityTypeManager object.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityManager;
+
+  /**
    * {@inheritdoc}
    */
-  public function __construct(
-  Connection $database,
-    ConfigFactoryInterface $config_factory,
-    DateFormatterInterface $date_formatter,
-    LoggerChannelFactoryInterface $logger_factory,
-    StateInterface $state) {
-    $this->database = $database;
-    $this->configFactory = $config_factory;
-    $this->dateFormatter = $date_formatter;
-    $this->loggerFactory = $logger_factory;
+  public function __construct() {
+
+  }
+
+  public function configure(ContainerInterface $container) {
+    $this->database = $container->get('database');
+    $this->configFactory = $container->get('config.factory');
+    $this->dateFormatter = $container->get('date.formatter');
+    $this->loggerFactory = $container->get('logger.factory');
     $this->config = $this->configFactory->getEditable('inactive_user.inactiveuseradmin');
-    $this->siteName = $this->getSiteName();
-    $this->state = $state;
+    $this->getSiteName();
+    $this->state = $container->get('state');
+    $this->sessionManager = $container->get('session_manager');
+    $this->entityManager = $container->get('entity_type.manager');
   }
 
   /**
@@ -166,7 +187,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
         $query->condition('uid', $uids, 'in');
         $query->execute();
 
-        $this->mail(t('[@sitename] Inactive users', ['@sitename' => $this->siteName]), $this->getMailText('notify_admin_text'), $notify_time, NULL, $user_list);
+        $this->mail($this->t('[@sitename] Inactive users', ['@sitename' => $this->siteName]), $this->getMailText('notify_admin_text'), $notify_time, NULL, $user_list);
       }
     }
   }
@@ -209,7 +230,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
         $uids = [];
         if ($user->uid && ($user->access < (REQUEST_TIME - $notify_time))) {
           $uids[] = $user->uid;
-          $this->mail(t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $notify_time, $user, NULL);
+          $this->mail($this->t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $notify_time, $user, NULL);
           $this->loggerFactory->get('user')->notice('user %user notified of inactivity', ['%user' => $user->name]);
         }
       }
@@ -260,7 +281,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $mail_text = $this->getMailText('inactive_user_block_warn_text');
       foreach ($results as $user) {
         $uids[] = $user->id();
-        $this->mail(t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $warn_time, $user, NULL);
+        $this->mail($this->t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $warn_time, $user, NULL);
         $this->loggerFactory->get('user')->notice('user %user warned will be blocked due to inactivity', ['%user' => $user->name]);
       }
     }
@@ -331,7 +352,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
           // Notify user.
           if ($this->config->get('inactive_user_notify_block')) {
             $notified_uids[] = $user->uid;
-            $this->mail(t('[@sitename] Account blocked due to inactivity', ['@sitename' => $this->siteName]), $mail_text_user, $block_time, $user, NULL);
+            $this->mail($this->t('[@sitename] Account blocked due to inactivity', ['@sitename' => $this->siteName]), $mail_text_user, $block_time, $user, NULL);
             $this->loggerFactory->get('user')->notice('user %user blocked due to inactivity', ['%user' => $user->name]);
           }
 
@@ -344,7 +365,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
           }
         }
         if (!empty($user_list)) {
-          $this->mail(t('[@sitename] Blocked users', ['@sitename' => $this->siteName]), $mail_text_admin, $block_time, NULL, $user_list);
+          $this->mail($this->t('[@sitename] Blocked users', ['@sitename' => $this->siteName]), $mail_text_admin, $block_time, NULL, $user_list);
         }
       }
       if (!empty($inactive_uids)) {
@@ -422,7 +443,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
             ->execute();
 
           if (!$protected) {
-            $this->mail(t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $warn_time, $user, NULL);
+            $this->mail($this->t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $warn_time, $user, NULL);
             $this->loggerFactory->get('user')->notice('user %user warned will be deleted due to inactivity', ['%user' => $user->mail]);
           }
         }
@@ -490,11 +511,11 @@ class InactiveUserService implements InactiveUserServiceInterface {
             // $array = (array) $user;
             // TODO: look into which methode using for User entity deletion.
             // Prepare the userDelete function.
-            $account = \Drupal::service('entity_type.manager')->getStorage('user')->load($user->uid);
+            $account = $this->entityManager->getStorage('user')->load($user->uid);
             $account->delete();
 
             if ($this->config->get('inactive_user_notify_delete')) {
-              $this->mail(t('[@sitename] Account removed', ['@sitename' => $this->siteName]), $mail_text, $delete_time, $user, NULL);
+              $this->mail($this->t('[@sitename] Account removed', ['@sitename' => $this->siteName]), $mail_text, $delete_time, $user, NULL);
             }
             if ($this->config->get('inactive_user_notify_delete_admin')) {
               $user_list .= "$user->name ($user->mail) last active on " . $this->dateFormatter->format($user->access, 'large') . ".\n";
@@ -504,7 +525,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
         }
       }
       if (!empty($user_list)) {
-        $this->mail(t('[@sitename] Deleted accounts', ['@sitename' => $this->siteName]), $this->getMailText('delete_notify_admin_text'), $delete_time, NULL, $user_list);
+        $this->mail($this->t('[@sitename] Deleted accounts', ['@sitename' => $this->siteName]), $this->getMailText('delete_notify_admin_text'), $delete_time, NULL, $user_list);
       }
     }
   }
@@ -538,28 +559,28 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function mailText($key) {
     switch ($key) {
       case 'notify_text':
-        return t("Hello %username,\n\n  We haven't seen you at %sitename since %lastaccess, and we miss you!  Please come back and visit us soon at %siteurl.\n\nSincerely,\n  %sitename team");
+        return $this->t("Hello %username,\n\n  We haven't seen you at %sitename since %lastaccess, and we miss you!  Please come back and visit us soon at %siteurl.\n\nSincerely,\n  %sitename team");
 
       case 'notify_admin_text':
-        return t("Hello,\n\n  This automatic notification is to inform you that the following users haven't been seen on %sitename for more than %period:\n\n%userlist");
+        return $this->t("Hello,\n\n  This automatic notification is to inform you that the following users haven't been seen on %sitename for more than %period:\n\n%userlist");
 
       case 'block_warn_text':
-        return t("Hello %username,\n\n  We haven't seen you at %sitename since %lastaccess, and we miss you!  This automatic message is to warn you that your account will be disabled in %period unless you come back and visit us before that time.\n\n  Please visit us at %siteurl.\n\nSincerely,\n  %sitename team");
+        return $this->t("Hello %username,\n\n  We haven't seen you at %sitename since %lastaccess, and we miss you!  This automatic message is to warn you that your account will be disabled in %period unless you come back and visit us before that time.\n\n  Please visit us at %siteurl.\n\nSincerely,\n  %sitename team");
 
       case 'block_notify_text':
-        return t("Hello %username,\n\n  This automatic message is to notify you that your account on %sitename has been automatically disabled due to no activity for more than %period.\n\n  Please visit us at %siteurl to have your account re-enabled.\n\nSincerely,\n  %sitename team");
+        return $this->t("Hello %username,\n\n  This automatic message is to notify you that your account on %sitename has been automatically disabled due to no activity for more than %period.\n\n  Please visit us at %siteurl to have your account re-enabled.\n\nSincerely,\n  %sitename team");
 
       case 'block_notify_admin_text':
-        return t("Hello,\n\n  This automatic notification is to inform you that the following users have been automatically blocked due to inactivity on %sitename for more than %period:\n\n%userlist");
+        return $this->t("Hello,\n\n  This automatic notification is to inform you that the following users have been automatically blocked due to inactivity on %sitename for more than %period:\n\n%userlist");
 
       case 'delete_warn_text':
-        return t("Hello %username,\n\n  We haven't seen you at %sitename since %lastaccess, and we miss you!  This automatic message is to warn you that your account will be completely removed in %period unless you come back and visit us before that time.\n\n  Please visit us at %siteurl.\n\nSincerely,\n  %sitename team");
+        return $this->t("Hello %username,\n\n  We haven't seen you at %sitename since %lastaccess, and we miss you!  This automatic message is to warn you that your account will be completely removed in %period unless you come back and visit us before that time.\n\n  Please visit us at %siteurl.\n\nSincerely,\n  %sitename team");
 
       case 'delete_notify_text':
-        return t("Hello %username,\n\n  This automatic message is to notify you that your account on %sitename has been automatically removed due to no activity for more than %period.\n\n  Please visit us at %siteurl if you would like to create a new account.\n\nSincerely,\n  %sitename team");
+        return $this->t("Hello %username,\n\n  This automatic message is to notify you that your account on %sitename has been automatically removed due to no activity for more than %period.\n\n  Please visit us at %siteurl if you would like to create a new account.\n\nSincerely,\n  %sitename team");
 
       case 'delete_notify_admin_text':
-        return t("Hello,\n\n  This automatic notification is to inform you that the following users have been automatically deleted due to inactivity on %sitename for more than %period:\n\n%userlist");
+        return $this->t("Hello,\n\n  This automatic notification is to inform you that the following users have been automatically deleted due to inactivity on %sitename for more than %period:\n\n%userlist");
     }
   }
 
@@ -571,7 +592,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     $period,
     $user = NULL,
     $user_list = NULL) {
-    $site_name = \Drupal::config('system.site')->get('name');
+    $site_name = $this->siteName;
     if (empty($site_name)) {
       $site_name = 'Drupal';
     }
@@ -580,7 +601,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
     $url = Url::fromUserInput($base_url);
     $link = Link::fromTextAndUrl($base_url, $url);
 
-    $interval = \Drupal::service('date.formatter')->formatInterval($period);
+    $date_formatter = $this->serviceContainer->get('date.formatter');
+    $interval = $date_formatter->formatInterval($period);
 
     if ($user_list) {
       $to = $this->inactiveUserAdminMail();
@@ -593,9 +615,9 @@ class InactiveUserService implements InactiveUserServiceInterface {
     }
     elseif (isset($user->uid)) {
       $to = $user->mail;
-      $access = t('never');
+      $access = $this->t('never');
       if (!empty($user->access)) {
-        \Drupal::service('date.formatter')->format($user->access, 'short');
+        $access = $date_formatter->format($user->access, 'short');
       }
       $variables = [
         '%username' => $user->name,
@@ -608,7 +630,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     }
     if (isset($to)) {
 
-      $from = \Drupal::config('system.site')->get('mail');
+      $from = $this->configFactory->get('system.site')->get('mail');
       if (empty($from)) {
         $from = ini_get('sendmail_from');
       }
@@ -626,7 +648,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
           'message' => strtr($message, $variables),
           'headers' => $headers,
         ];
-        $language = \Drupal::service('language.default')->get()->getId();
+        $language = $this->serviceContainer->get('language.default')->get()->getId();
         if ($user = user_load_by_mail($recipient)) {
           $language = $user->getPreferredLangcode();
         }
@@ -672,8 +694,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
    *   The user object from query.
    */
   protected function deleteUser($user) {
-    $session_manager = \Drupal::service('session_manager');
-    $session_manager->delete($user->id());
+    $this->sessionManager->delete($user->id());
     db_delete('users')
       ->condition('uid', $user->uid)
       ->execute();

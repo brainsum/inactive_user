@@ -1,4 +1,5 @@
 services:
   inactive_user.notify:
     class: Drupal\inactive_user\InactiveUserService
-    arguments: ['@database', '@config.factory', '@date.formatter', '@logger.factory', '@state']
+    calls:
+      - [configure, ['@service_container']]
