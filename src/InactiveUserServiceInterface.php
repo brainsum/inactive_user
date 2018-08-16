@@ -7,6 +7,9 @@ namespace Drupal\inactive_user;
  */
 interface InactiveUserServiceInterface {
 
+  /**
+   * Run cron function for execute inactive user processes.
+   */
   public function runCron();
 
   /**
@@ -57,26 +60,34 @@ interface InactiveUserServiceInterface {
   public function inactiveUserAdminMail();
 
   /**
-   * 
-   * @param type $key
+   * Get mail text from config.
+   *
+   * @param string $key
+   *   The mail text key.
    */
   public function getMailText($key);
 
   /**
    * Some default e-mail notification strings.
    *
-   * @param string $message
+   * @param string $key
+   *   The mail text key.
    */
-  public function mailText($message);
+  public function mailText($key);
 
   /**
    * Wrapper for user_mail.
    *
-   * @param type $subject
-   * @param type $message
-   * @param type $period
-   * @param type $user
+   * @param string $subject
+   *   The mail subject text.
+   * @param string $message
+   *   The message text.
+   * @param int $period
+   *   The period when user was inactive.
+   * @param object $user
+   *   The user object from query.
    * @param type $user_list
+   *   The user list to sending message.
    */
   public function mail($subject, $message, $period, $user, $user_list);
   
@@ -85,6 +96,9 @@ interface InactiveUserServiceInterface {
    *
    * The settings of inactive_user.module allow to protect such
    * users from deletion.
+   *
+   * @param int $uid
+   *   The user id.
    */
   public function inactiveUserWithContent($uid);
 
