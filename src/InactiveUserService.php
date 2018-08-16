@@ -535,8 +535,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
   /**
    * {@inheritdoc}
    */
-  public function mailText($message) {
-    switch ($message) {
+  public function mailText($key) {
+    switch ($key) {
       case 'notify_text':
         return t("Hello %username,\n\n  We haven't seen you at %sitename since %lastaccess, and we miss you!  Please come back and visit us soon at %siteurl.\n\nSincerely,\n  %sitename team");
 
@@ -668,8 +668,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
   /**
    * Delete user function.
    *
-   * @param array $user
-   *   The user array from query.
+   * @param object $user
+   *   The user object from query.
    */
   protected function deleteUser(array $user) {
     $session_manager = \Drupal::service('session_manager');
