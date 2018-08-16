@@ -15,19 +15,19 @@ define('TWO_DAYS', 60 * 60 * 24 * 2);
 define('THRE_DAYS', 60 * 60 * 24 * 3);
 
 define('ONE_WEEK', 60 * 60 * 24 * 7);
-define('TWO_WEEKS', 60 * 60 * 24 * 14);
-define('THRE_WEEKS', 60 * 60 * 24 * 21);
-define('FOUR_WEEKS', 60 * 60 * 24 * 28);
+define('TWO_WEEKS', 60 * 60 * 24 * 2 * 7);
+define('THRE_WEEKS', 60 * 60 * 24 * 3 * 7);
+define('FOUR_WEEKS', 60 * 60 * 24 * 4 * 7);
 
 define('ONE_MONTH', 60 * 60 * 24 * 30);
-define('TWO_MONTHS', 60 * 60 * 24 * 60);
-define('THRE_MONTHS', 60 * 60 * 24 * 90);
-define('SIX_MONTHS', 60 * 60 * 24 * 180);
-define('NINE_MONTHS', 60 * 60 * 24 * 270);
+define('TWO_MONTHS', 60 * 60 * 24 * 2 * 30);
+define('THRE_MONTHS', 60 * 60 * 24 * 3 * 30);
+define('SIX_MONTHS', 60 * 60 * 24 * 6 * 30);
+define('NINE_MONTHS', 60 * 60 * 24 * 9 * 30);
 
 define('ONE_YEAR', 60 * 60 * 24 * 365);
-define('ONE_AND_HALF_YEARS', 60 * 60 * 24 * 547);
-define('TWO_YEARS', 60 * 60 * 24 * 730);
+define('ONE_AND_HALF_YEARS', 60 * 60 * 24 * (365 + 182));
+define('TWO_YEARS', 60 * 60 * 24 * 2 * 365);
 
 /**
  * Implements hook_help().

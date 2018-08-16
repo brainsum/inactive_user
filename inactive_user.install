@@ -8,3 +8,11 @@
  * 
  * Description of inactive_user
  */
+
+/**
+ * Implements hook_uninstall().
+ */
+function inactive_user_uninstall() {
+  // Remove module prepared states.
+  \Drupal::state()->delete('inactive_user_timestamp');
+}

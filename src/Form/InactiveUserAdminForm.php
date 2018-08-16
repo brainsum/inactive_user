@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\inactive_user\InactiveUserServiceInterface;
 
 /**
  * Class InactiveUserAdminForm.
@@ -20,19 +21,23 @@ class InactiveUserAdminForm extends ConfigFormBase {
    */
   protected $datetimeTime;
 
+  protected $inactiveUserNotify;
+
+
   /**
    * Constructs a new InactiveUserAdminForm object.
    */
   public function __construct(
-  ConfigFactoryInterface $config_factory, TimeInterface $datetime_time
+  ConfigFactoryInterface $config_factory, TimeInterface $datetime_time, InactiveUserServiceInterface $inactive_user_notify
   ) {
     parent::__construct($config_factory);
     $this->datetimeTime = $datetime_time;
+    $this->inactiveUserNotify = $inactive_user_notify;
   }
 
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('config.factory'), $container->get('datetime.time')
+      $container->get('config.factory'), $container->get('datetime.time'), $container->get('inactive_user.notify')
     );
   }
 
@@ -69,7 +74,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
     $form['inactive_user_admin_email']['inactive_user_admin_email'] = [
       '#type' => 'textfield',
       '#title' => $this->t('E-mail addresses'),
-      '#default_value' => _inactive_user_admin_mail(),
+      '#default_value' => $this->inactiveUserNotify->inactiveUserAdminMail(),
       '#description' => $this->t('Supply a comma-separated list of e-mail addresses that will receive administrator alerts. Spaces between addresses are allowed.'),
       '#maxlength' => 256,
       '#required' => TRUE,
@@ -98,7 +103,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
 
     $notify_text = $config->get('inactive_user_notify_text');
     if (empty($notify_text)) {
-      $notify_text = _inactive_user_mail_text('notify_text');
+      $notify_text = $this->inactiveUserNotify->getMailText('notify_text');
     }
     $form['inactive_user_notification']['inactive_user_notify_text'] = [
       '#type' => 'textarea',
@@ -126,7 +131,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
 
     $warn_text = $config->get('inactive_user_block_warn_text');
     if (empty($warn_text)) {
-      $warn_text = _inactive_user_mail_text('block_warn_text');
+      $warn_text = $this->inactiveUserNotify->getMailText('block_warn_text');
     }
     $form['block_inactive_user']['inactive_user_block_warn_text'] = array(
       '#type' => 'textarea',
@@ -154,7 +159,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
 
     $block_notify_text = $config->get('inactive_user_block_notify_text');
     if (empty($block_notify_text)) {
-      $block_notify_text = _inactive_user_mail_text('block_notify_text');
+      $block_notify_text = $this->inactiveUserNotify->getMailText('block_notify_text');
     }
     $form['block_inactive_user']['inactive_user_block_notify_text'] = array(
       '#type' => 'textarea',
@@ -188,7 +193,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
 
     $delete_warn_text = $config->get('inactive_user_delete_warn_text');
     if (empty($delete_warn_text)) {
-      $delete_warn_text = _inactive_user_mail_text('delete_warn_text');
+      $delete_warn_text = $this->inactiveUserNotify->getMailText('delete_warn_text');
     }
     $form['delete_inactive_user']['inactive_user_delete_warn_text'] = array(
       '#type' => 'textarea',
@@ -222,7 +227,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
 
     $delete_notify_text = $config->get('inactive_user_delete_notify_text');
     if (empty($delete_notify_text)) {
-      $delete_notify_text = _inactive_user_mail_text('delete_notify_text');
+      $delete_notify_text = $this->inactiveUserNotify->getMailText('delete_notify_text');
     }
     $form['delete_inactive_user']['inactive_user_delete_notify_text'] = array(
       '#type' => 'textarea',
