@@ -41,6 +41,9 @@ class InactiveUserAdminForm extends ConfigFormBase {
     $this->inactiveUserNotify = $inactive_user_notify;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'), $container->get('datetime.time'), $container->get('inactive_user.notify')
@@ -70,7 +73,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
     FormStateInterface $form_state) {
     $mail_variables = ' %username, %useremail, %lastaccess, %period, %sitename, %siteurl';
 
-    // Set administrator e-mail
+    // Set administrator e-mail.
     $config = $this->config('inactive_user.inactiveuseradmin');
     $form['inactive_user_admin_email'] = [
       '#type' => 'details',
@@ -123,24 +126,24 @@ class InactiveUserAdminForm extends ConfigFormBase {
     ];
 
     // Automatically block inactive users.
-    $form['block_inactive_user'] = array(
+    $form['block_inactive_user'] = [
       '#type' => 'details',
       '#title' => $this->t('Automatically block inactive users'),
       '#open' => FALSE,
-    );
-    $form['block_inactive_user']['inactive_user_auto_block_warn'] = array(
+    ];
+    $form['block_inactive_user']['inactive_user_auto_block_warn'] = [
       '#type' => 'select',
       '#title' => $this->t('Warn users before they are blocked'),
       '#default_value' => $config->get('inactive_user_auto_block_warn'),
       '#options' => $this->warnPeriodOptionList(),
       '#description' => $this->t('Generate an email to notify a user that his/her account is about to be blocked.'),
-    );
+    ];
 
     $warn_text = $config->get('inactive_user_block_warn_text');
     if (empty($warn_text)) {
       $warn_text = $this->inactiveUserNotify->getMailText('block_warn_text');
     }
-    $form['block_inactive_user']['inactive_user_block_warn_text'] = array(
+    $form['block_inactive_user']['inactive_user_block_warn_text'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Body of user warning e-mail'),
       '#default_value' => $warn_text,
@@ -148,27 +151,27 @@ class InactiveUserAdminForm extends ConfigFormBase {
       '#rows' => 10,
       '#description' => $this->t('Customize the body of the notification e-mail sent to the user when their account is about to be blocked. Available variables are:') . $mail_variables,
       '#required' => TRUE,
-    );
-    $form['block_inactive_user']['inactive_user_auto_block'] = array(
+    ];
+    $form['block_inactive_user']['inactive_user_auto_block'] = [
       '#type' => 'select',
-      '#prefix' => '<div><hr></div>', // For visual clarity
+      '#prefix' => '<div><hr></div>',
       '#title' => $this->t("Block users who haven't logged in for more than"),
       '#default_value' => $config->get('inactive_user_auto_block'),
       '#options' => $this->periodOptionList(),
       '#description' => $this->t("Automatically block user accounts that haven't been used in the specified amount of time.  Requires crontab."),
-    );
-    $form['block_inactive_user']['inactive_user_notify_block'] = array(
+    ];
+    $form['block_inactive_user']['inactive_user_notify_block'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Notify user'),
       '#default_value' => $config->get('inactive_user_notify_block'),
       '#description' => $this->t('Generate an email to notify a user that his/her account has been automatically blocked.'),
-    );
+    ];
 
     $block_notify_text = $config->get('inactive_user_block_notify_text');
     if (empty($block_notify_text)) {
       $block_notify_text = $this->inactiveUserNotify->getMailText('block_notify_text');
     }
-    $form['block_inactive_user']['inactive_user_block_notify_text'] = array(
+    $form['block_inactive_user']['inactive_user_block_notify_text'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Body of blocked user account e-mail'),
       '#default_value' => $block_notify_text,
@@ -176,33 +179,33 @@ class InactiveUserAdminForm extends ConfigFormBase {
       '#rows' => 10,
       '#description' => $this->t('Customize the body of the notification e-mail sent to the user when their account has been blocked. Available variables are:') . $mail_variables,
       '#required' => TRUE,
-    );
-    $form['block_inactive_user']['inactive_user_notify_block_admin'] = array(
+    ];
+    $form['block_inactive_user']['inactive_user_notify_block_admin'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Notify administrator'),
       '#default_value' => $config->get('inactive_user_notify_block_admin'),
       '#description' => $this->t('Generate an email to notify the site administrator when a user is automatically blocked.'),
-    );
+    ];
 
     // Automatically delete inactive users.
-    $form['delete_inactive_user'] = array(
+    $form['delete_inactive_user'] = [
       '#type' => 'details',
       '#title' => $this->t('Automatically delete inactive users'),
       '#open' => FALSE,
-    );
-    $form['delete_inactive_user']['inactive_user_auto_delete_warn'] = array(
+    ];
+    $form['delete_inactive_user']['inactive_user_auto_delete_warn'] = [
       '#type' => 'select',
       '#title' => $this->t('Warn users before they are deleted'),
       '#default_value' => $config->get('inactive_user_auto_delete_warn'),
       '#options' => $this->warnPeriodOptionList(),
       '#description' => $this->t('Generate an email to notify a user that his/her account is about to be deleted.'),
-    );
+    ];
 
     $delete_warn_text = $config->get('inactive_user_delete_warn_text');
     if (empty($delete_warn_text)) {
       $delete_warn_text = $this->inactiveUserNotify->getMailText('delete_warn_text');
     }
-    $form['delete_inactive_user']['inactive_user_delete_warn_text'] = array(
+    $form['delete_inactive_user']['inactive_user_delete_warn_text'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Body of user warning e-mail'),
       '#default_value' => $delete_warn_text,
@@ -210,33 +213,33 @@ class InactiveUserAdminForm extends ConfigFormBase {
       '#rows' => 10,
       '#description' => $this->t('Customize the body of the notification e-mail sent to the user when their account is about to be deleted. Available variables are:') . $mail_variables,
       '#required' => TRUE,
-    );
-    $form['delete_inactive_user']['inactive_user_auto_delete'] = array(
+    ];
+    $form['delete_inactive_user']['inactive_user_auto_delete'] = [
       '#type' => 'select',
-      '#prefix' => '<div><hr></div>', // For visual clarity
+      '#prefix' => '<div><hr></div>',
       '#title' => $this->t("Delete users who haven't logged in for more than"),
       '#default_value' => $config->get('inactive_user_auto_delete'),
       '#options' => $this->periodOptionList(),
       '#description' => $this->t("Automatically delete user accounts that haven't been used in the specified amount of time.  Warning, user accounts are permanently deleted, with no ability to undo the action!  Requires crontab."),
-    );
-    $form['delete_inactive_user']['inactive_user_preserve_content'] = array(
+    ];
+    $form['delete_inactive_user']['inactive_user_preserve_content'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Preserve users that own site content'),
       '#default_value' => $config->get('inactive_user_preserve_content'),
       '#description' => $this->t('Select this option to never delete users that own site content.  If you delete a user that owns content on the site, such as a user that created a node or left a comment, the content will no longer be available via the normal Drupal user interface.  That is, if a user creates a node or leaves a comment, then the user is deleted, the node and/or comment will no longer be accesible even though it will still be in the database.'),
-    );
-    $form['delete_inactive_user']['inactive_user_notify_delete'] = array(
+    ];
+    $form['delete_inactive_user']['inactive_user_notify_delete'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Notify user'),
       '#default_value' => $config->get('inactive_user_notify_delete'),
       '#description' => $this->t('Generate an email to notify a user that his/her account has been automatically deleted.'),
-    );
+    ];
 
     $delete_notify_text = $config->get('inactive_user_delete_notify_text');
     if (empty($delete_notify_text)) {
       $delete_notify_text = $this->inactiveUserNotify->getMailText('delete_notify_text');
     }
-    $form['delete_inactive_user']['inactive_user_delete_notify_text'] = array(
+    $form['delete_inactive_user']['inactive_user_delete_notify_text'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Body of deleted user account e-mail'),
       '#default_value' => $delete_notify_text,
@@ -244,13 +247,13 @@ class InactiveUserAdminForm extends ConfigFormBase {
       '#rows' => 10,
       '#description' => $this->t('Customize the body of the notification e-mail sent to the user when their account has been deleted. Available variables are:') . $mail_variables,
       '#required' => TRUE,
-    );
-    $form['delete_inactive_user']['inactive_user_notify_delete_admin'] = array(
+    ];
+    $form['delete_inactive_user']['inactive_user_notify_delete_admin'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Notify administrator'),
       '#default_value' => $config->get('inactive_user_notify_delete_admin'),
       '#description' => $this->t('Generate an email to notify the site administrator when a user is automatically deleted.'),
-    );
+    ];
 
     return parent::buildForm($form, $form_state);
   }
@@ -314,7 +317,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
   /**
    * The period option list.
    *
-   * @return array
+   * @return array periodOptionList
    */
   protected function periodOptionList() {
     return [
@@ -336,7 +339,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
   /**
    * The warn period option list.
    *
-   * @return array
+   * @return array warnPeriodOptionList
    */
   protected function warnPeriodOptionList() {
     return [
