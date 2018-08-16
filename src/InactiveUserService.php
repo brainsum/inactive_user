@@ -492,24 +492,22 @@ class InactiveUserService implements InactiveUserServiceInterface {
             $account = \Drupal::service('entity_type.manager')->getStorage('user')->load($user->uid);
             $account->delete();
 
-            /**
-            $session_manager = \Drupal::service('session_manager');
-            $session_manager->delete($user->id());
-            db_delete('users')
-            ->condition('uid', $user->uid)
-            ->execute();
-            db_delete('users_field_data')
-            ->condition('uid', $user->uid)
-            ->execute();
-            db_delete('user__roles')
-            ->condition('uid', $user->uid)
-            ->execute();
-            db_delete('inactive_users')
-            ->condition('uid', $user->uid)
-            ->execute();
-            module_invoke_all('user', 'delete', $array, $user);
-            *
-            */
+            //$session_manager = \Drupal::service('session_manager');
+            //$session_manager->delete($user->id());
+            //db_delete('users')
+            //->condition('uid', $user->uid)
+            //->execute();
+            //db_delete('users_field_data')
+            //->condition('uid', $user->uid)
+            //->execute();
+            //db_delete('user__roles')
+            //->condition('uid', $user->uid)
+            //->execute();
+            //db_delete('inactive_users')
+            //->condition('uid', $user->uid)
+            //->execute();
+            //module_invoke_all('user', 'delete', $array, $user);
+
             if ($this->config->get('inactive_user_notify_delete')) {
               $this->mail(t('[@sitename] Account removed', ['@sitename' => $this->siteName]), $mail_text, $delete_time, $user, NULL);
             }
