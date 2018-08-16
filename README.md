@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/brainsum/inactive_user.svg?branch=master)](https://travis-ci.org/brainsum/inactive_user)
 
 Overview:
 --------
