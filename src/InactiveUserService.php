@@ -89,6 +89,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
 
   }
 
+  /**
+   * Configure service dependencies.
+   *
+   * @param ContainerInterface $container
+   *   The Container object.
+   */
   public function configure(ContainerInterface $container) {
     $this->database = $container->get('database');
     $this->configFactory = $container->get('config.factory');
@@ -173,6 +179,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
 
       $results = $query->execute();
 
+      $user_list = '';
       foreach ($results as $user) {
         $uids = [];
         if ($user->uid && ($user->access < (REQUEST_TIME - $notify_time))) {
@@ -341,6 +348,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $mail_text_user = $this->getMailText('inactive_user_block_notify_text');
       $mail_text_admin = $this->getMailText('block_notify_admin_text');
 
+      $user_list = '';
       foreach ($results as $user) {
         // Don't block user yet if we sent a warning and it hasn't expired.
         if ($user->uid &&
@@ -490,6 +498,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $results = $query->execute();
 
       $mail_text = $this->getMailText('inactive_user_delete_notify_text');
+      $user_list = '';
       foreach ($results as $user) {
         $deleteable_user_results = ($user->warned_user_delete_timestamp < REQUEST_TIME && $user->protected != 1);
         if ($user->uid &&
@@ -537,7 +546,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if ($adresses = $this->config->get('inactive_user_admin_email')) {
       return $adresses;
     }
-    $admin = User::load(1);
+    $admin = $this->entityManager->getStorage('user')->load(1);
     return $admin->getEmail();
   }
 
@@ -597,7 +606,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $site_name = 'Drupal';
     }
 
-    $base_url = \Drupal::request()->getHost();
+    $base_url = $this->serviceContainer->get('request_stack')->getCurrentRequest()->getHost();
     $url = Url::fromUserInput($base_url);
     $link = Link::fromTextAndUrl($base_url, $url);
 
