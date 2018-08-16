@@ -43,20 +43,34 @@ class InactiveUserService implements InactiveUserServiceInterface {
 
   /**
    * Inactive user config.
+   *
+   * @var Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $config;
 
   /**
-   * The system config variable.
+   * The site name.
+   *
+   * @var string
    */
   protected $siteName;
+
+  /**
+   * State service.
+   *
+   * @var Drupal\Core\State\StateInterface
+   */
   protected $state;
 
   /**
    * {@inheritdoc}
    */
   public function __construct(
-  Connection $database, ConfigFactoryInterface $config_factory, DateFormatterInterface $date_formatter, LoggerChannelFactoryInterface $logger_factory, StateInterface $state) {
+  Connection $database,
+    ConfigFactoryInterface $config_factory,
+    DateFormatterInterface $date_formatter,
+    LoggerChannelFactoryInterface $logger_factory,
+    StateInterface $state) {
     $this->database = $database;
     $this->configFactory = $config_factory;
     $this->dateFormatter = $date_formatter;
@@ -112,7 +126,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Notify administrator of inactive user accounts.
     if ($notify_time = $this->config->get('inactive_user_notify_admin')) {
       $query = $this->database->select('users_field_data', 'u');
-      $query->fields('u', array('uid', 'name', 'mail', 'access', 'created'));
+      $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
@@ -127,9 +141,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $query->condition('u.notified_admin', 0);
       $query->condition('u.uid', [0, 1], 'not in');
 
-      // Adds queryTag to identify this query in a custom module using the hook_query_TAG_alter().
-      // The first tag is a general identifier so you can include all the queries that are being processed in this hook_cron().
-      // The second tag is unique and only used to make changes to this particular query.
+      // Adds queryTag to identify this query in a custom module using the
+      // hook_query_TAG_alter().
+      // The first tag is a general identifier so you can include all the
+      // queries that are being processed in this hook_cron().
+      // The second tag is unique and only used to make changes to this
+      // particular query.
       $query->addTag('inactive_user');
       $query->addTag('notified_admin');
 
@@ -161,7 +178,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Notify users that their account has been inactive.
     if ($notify_time = $this->config->get('inactive_user_notify')) {
       $query = $this->database->select('users_field_data', 'u');
-      $query->fields('u', array('uid', 'name', 'mail', 'access', 'created'));
+      $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
@@ -176,9 +193,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $query->condition('u.notified_user', 0);
       $query->condition('u.uid', [0, 1], 'not in');
 
-      // Adds queryTag to identify this query in a custom module using the hook_query_TAG_alter().
-      // The first tag is a general identifier so you can include all the queries that are being processed in this hook_cron().
-      // The second tag is unique and only used to make changes to this particular query.
+      // Adds queryTag to identify this query in a custom module using the
+      // hook_query_TAG_alter().
+      // The first tag is a general identifier so you can include all the
+      // queries that are being processed in this hook_cron().
+      // The second tag is unique and only used to make changes to this
+      // particular query.
       $query->addTag('inactive_user');
       $query->addTag('notified_user');
 
@@ -190,7 +210,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
         if ($user->uid && ($user->access < (REQUEST_TIME - $notify_time))) {
           $uids[] = $user->uid;
           $this->mail(t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $notify_time, $user, NULL);
-          $this->loggerFactory->get('user')->notice('user %user notified of inactivity', array('%user' => $user->name));
+          $this->loggerFactory->get('user')->notice('user %user notified of inactivity', ['%user' => $user->name]);
         }
       }
       if (!empty($uids)) {
@@ -210,7 +230,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if (($warn_time = $this->config->get('inactive_user_auto_block_warn')) &&
       ($block_time = $this->config->get('inactive_user_auto_block'))) {
       $query = $this->database->select('users_field_data', 'u');
-      $query->fields('u', array('uid', 'name', 'mail', 'created', 'access'));
+      $query->fields('u', ['uid', 'name', 'mail', 'created', 'access']);
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
@@ -225,9 +245,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $query->condition('u.status', 0, '<>');
       $query->condition('u.uid', [0, 1], 'not in');
 
-      // Adds queryTag to identify this query in a custom module using the hook_query_TAG_alter().
-      // The first tag is a general identifier so you can include all the queries that are being processed in this hook_cron().
-      // The second tag is unique and only used to make changes to this particular query.
+      // Adds queryTag to identify this query in a custom module using the
+      // hook_query_TAG_alter().
+      // The first tag is a general identifier so you can include all the
+      // queries that are being processed in this hook_cron().
+      // The second tag is unique and only used to make changes to this
+      // particular query.
       $query->addTag('inactive_user');
       $query->addTag('warned_user_block_timestamp');
 
@@ -258,7 +281,13 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Automatically block users.
     if ($block_time = $this->config->get('inactive_user_auto_block')) {
       $query = $this->database->select('users_field_data', 'u');
-      $query->fields('u', array('uid', 'name', 'mail', 'created', 'access', 'warned_user_block_timestamp', 'notified_admin_block'));
+      $query->fields('u', ['uid',
+        'name',
+        'mail',
+        'created',
+        'access',
+        'warned_user_block_timestamp',
+        'notified_admin_block']);
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
@@ -273,9 +302,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $query->condition('u.status', 0, '<>');
       $query->condition('u.uid', [0, 1], 'not in');
 
-      // Adds queryTag to identify this query in a custom module using the hook_query_TAG_alter().
-      // The first tag is a general identifier so you can include all the queries that are being processed in this hook_cron().
-      // The second tag is unique and only used to make changes to this particular query.
+      // Adds queryTag to identify this query in a custom module using the
+      // hook_query_TAG_alter().
+      // The first tag is a general identifier so you can include all the
+      // queries that are being processed in this hook_cron().
+      // The second tag is unique and only used to make changes to this
+      // particular query.
       $query->addTag('inactive_user');
       $query->addTag('warned_user_block_timestamp');
 
@@ -343,7 +375,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if (($warn_time = $this->config->get('inactive_user_auto_delete_warn')) &&
       ($delete_time = $this->config->get('inactive_user_auto_delete'))) {
       $query = db_select('users_field_data', 'u');
-      $query->fields('u', array('uid', 'name', 'mail', 'created', 'access', 'warned_user_delete_timestamp'));
+      $query->fields('u', ['uid',
+        'name',
+        'mail',
+        'created',
+        'access',
+        'warned_user_delete_timestamp']);
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
@@ -356,9 +393,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
         ->condition($and_condition2);
       $query->condition('u.uid', [0, 1], 'not in');
 
-      // Adds queryTag to identify this query in a custom module using the hook_query_TAG_alter().
-      // The first tag is a general identifier so you can include all the queries that are being processed in this hook_cron().
-      // The second tag is unique and only used to make changes to this particular query.
+      // Adds queryTag to identify this query in a custom module using the
+      // hook_query_TAG_alter().
+      // The first tag is a general identifier so you can include all the
+      // queries that are being processed in this hook_cron().
+      // The second tag is unique and only used to make changes to this
+      // particular query.
       $query->addTag('inactive_user');
       $query->addTag('warn_users_deleted');
 
@@ -395,7 +435,13 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Automatically delete users.
     if ($delete_time = $this->config->get('inactive_user_auto_delete')) {
       $query = $this->database->select('users_field_data', 'u');
-      $query->fields('u', array('uid', 'name', 'mail', 'created', 'access', 'warned_user_delete_timestamp', 'protected'));
+      $query->fields('u', ['uid',
+        'name',
+        'mail',
+        'created',
+        'access',
+        'warned_user_delete_timestamp',
+        'protected']);
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
@@ -408,9 +454,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
         ->condition($and_condition2);
       $query->condition('u.uid', [0, 1], 'not in');
 
-      // Adds queryTag to identify this query in a custom module using the hook_query_TAG_alter().
-      // The first tag is a general identifier so you can include all the queries that are being processed in this hook_cron().
-      // The second tag is unique and only used to make changes to this particular query.
+      // Adds queryTag to identify this query in a custom module using the
+      // hook_query_TAG_alter().
+      // The first tag is a general identifier so you can include all the
+      // queries that are being processed in this hook_cron().
+      // The second tag is unique and only used to make changes to this
+      // particular query.
       $query->addTag('inactive_user');
       $query->addTag('delete_users');
 
@@ -456,7 +505,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
               ->condition('uid', $user->uid)
               ->execute();
               module_invoke_all('user', 'delete', $array, $user);
-             * 
+             *
              */
             if ($this->config->get('inactive_user_notify_delete')) {
               $this->mail(t('[@sitename] Account removed', ['@sitename' => $this->siteName]), $mail_text, $delete_time, $user, NULL);
@@ -481,7 +530,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if ($adresses = $this->config->get('inactive_user_admin_email')) {
       return $adresses;
     }
-    $admin = \Drupal\user\Entity\User::load(1);
+    $admin = User::load(1);
     return $admin->getEmail();
   }
 
@@ -531,26 +580,30 @@ class InactiveUserService implements InactiveUserServiceInterface {
   /**
    * {@inheritdoc}
    */
-  public function mail($subject, $message, $period, $user = NULL, $user_list = NULL) {
+  public function mail($subject,
+    $message,
+    $period,
+    $user = NULL,
+    $user_list = NULL) {
     $site_name = \Drupal::config('system.site')->get('name');
     if (empty($site_name)) {
       $site_name = 'Drupal';
     }
 
     $base_url = \Drupal::request()->getHost();
-    $url = \Drupal\Core\Url::fromUserInput($base_url);
-    $link = \Drupal\Core\Link::fromTextAndUrl($base_url, $url);
+    $url = Url::fromUserInput($base_url);
+    $link = Link::fromTextAndUrl($base_url, $url);
 
     $interval = \Drupal::service('date.formatter')->formatInterval($period);
 
     if ($user_list) {
       $to = $this->inactiveUserAdminMail();
-      $variables = array(
+      $variables = [
         '%period' => $interval,
         '%sitename' => $site_name,
         '%siteurl' => $link->toString(),
         "%userlist" => $user_list,
-      );
+      ];
     }
     elseif (isset($user->uid)) {
       $to = $user->mail;
@@ -558,14 +611,14 @@ class InactiveUserService implements InactiveUserServiceInterface {
       if (!empty($user->access)) {
         \Drupal::service('date.formatter')->format($user->access, 'short');
       }
-      $variables = array(
+      $variables = [
         '%username' => $user->name,
         '%useremail' => $user->mail,
         '%lastaccess' => $access,
         '%period' => $interval,
         '%sitename' => $site_name,
         '%siteurl' => $link,
-      );
+      ];
     }
     if (isset($to)) {
 
@@ -574,19 +627,19 @@ class InactiveUserService implements InactiveUserServiceInterface {
         $from = ini_get('sendmail_from');
       }
 
-      $headers = array(
+      $headers = [
         'Reply-to' => $from,
         'Return-path' => "<$from>",
         'Errors-to' => $from,
-      );
+      ];
       $recipients = explode(',', $to);
       foreach ($recipients as $recipient) {
         $recipient = trim($recipient);
-        $params = array(
+        $params = [
           'subject' => $subject,
           'message' => strtr($message, $variables),
           'headers' => $headers,
-        );
+        ];
         $language = \Drupal::service('language.default')->get()->getId();
         if ($user = user_load_by_mail($recipient)) {
           $language = $user->getPreferredLangcode();
@@ -601,13 +654,17 @@ class InactiveUserService implements InactiveUserServiceInterface {
    */
   public function inactiveUserWithContent($uid) {
     $user_has_nodes = $this->database->select('node_field_data', 'n')
-        ->fields('n', ['uid'])
-        ->condition('n.uid', $uid)
-        ->countQuery()->execute()->fetchField();
+      ->fields('n', ['uid'])
+      ->condition('n.uid', $uid)
+      ->countQuery()
+      ->execute()
+      ->fetchField();
     $user_has_comments = $this->database->select('comment_field_data', 'c')
-        ->fields('c', array('uid'))
-        ->condition('c.uid', $uid)
-        ->countQuery()->execute()->fetchField();
+      ->fields('c', ['uid'])
+      ->condition('c.uid', $uid)
+      ->countQuery()
+      ->execute()
+      ->fetchField();
 
     return ($user_has_nodes + $user_has_comments) > 0;
   }
