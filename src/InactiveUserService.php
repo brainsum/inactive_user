@@ -92,7 +92,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   /**
    * Configure service dependencies.
    *
-   * @param ContainerInterface $container
+   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
    *   The Container object.
    */
   public function configure(ContainerInterface $container) {
