@@ -86,11 +86,11 @@ interface InactiveUserServiceInterface {
    *   The period when user was inactive.
    * @param object $user
    *   The user object from query.
-   * @param type $user_list
+   * @param string $user_list
    *   The user list to sending message.
    */
   public function mail($subject, $message, $period, $user, $user_list);
-  
+
   /**
    * Returns TRUE if the user has ever created a node or a comment.
    *
