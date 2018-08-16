@@ -15,20 +15,26 @@ use Drupal\inactive_user\InactiveUserServiceInterface;
 class InactiveUserAdminForm extends ConfigFormBase {
 
   /**
+   * Drupal\inactive_user\InactiveUserServiceInterface.
+   *
+   * @var Drupal\inactive_user\InactiveUserServiceInterface
+   */
+  protected $datetimeTime;
+
+  /**
    * Drupal\Component\Datetime\TimeInterface definition.
    *
    * @var \Drupal\Component\Datetime\TimeInterface
    */
-  protected $datetimeTime;
-
   protected $inactiveUserNotify;
-
 
   /**
    * Constructs a new InactiveUserAdminForm object.
    */
   public function __construct(
-  ConfigFactoryInterface $config_factory, TimeInterface $datetime_time, InactiveUserServiceInterface $inactive_user_notify
+  ConfigFactoryInterface $config_factory,
+    TimeInterface $datetime_time,
+    InactiveUserServiceInterface $inactive_user_notify
   ) {
     parent::__construct($config_factory);
     $this->datetimeTime = $datetime_time;
@@ -60,7 +66,8 @@ class InactiveUserAdminForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form,
+    FormStateInterface $form_state) {
     $mail_variables = ' %username, %useremail, %lastaccess, %period, %sitename, %siteurl';
 
     // Set administrator e-mail
@@ -251,7 +258,8 @@ class InactiveUserAdminForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
+  public function validateForm(array &$form,
+    FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
     $valid_email = $form_state->getValue('inactive_user_admin_email');
     $mails = explode(',', $valid_email);
@@ -273,7 +281,8 @@ class InactiveUserAdminForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function submitForm(array &$form,
+    FormStateInterface $form_state) {
     parent::submitForm($form, $form_state);
 
     $elements = [
@@ -302,6 +311,11 @@ class InactiveUserAdminForm extends ConfigFormBase {
     }
   }
 
+  /**
+   * The period option list.
+   *
+   * @return array
+   */
   protected function periodOptionList() {
     return [
       0 => 'disabled',
@@ -319,6 +333,11 @@ class InactiveUserAdminForm extends ConfigFormBase {
     ];
   }
 
+  /**
+   * The warn period option list.
+   *
+   * @return array
+   */
   protected function warnPeriodOptionList() {
     return [
       0 => $this->t('Disabled'),
