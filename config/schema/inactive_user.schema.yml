@@ -1,0 +1,38 @@
+inactive_user.inactiveuseradmin:
+  type: config_object
+  label: Settings
+  mapping:
+    inactive_user_admin_email:
+      type: string
+    inactive_user_notify_admin:
+      type: int
+    inactive_user_notify:
+      type: int
+    inactive_user_notify_text:
+      type: string
+    inactive_user_auto_block_warn:
+      type: int
+    inactive_user_block_warn_text:
+      type: string
+    inactive_user_auto_block:
+      type: int
+    inactive_user_notify_block:
+      type: int
+    inactive_user_block_notify_text:
+      type: string
+    inactive_user_notify_block_admin:
+      type: int
+    inactive_user_auto_delete_warn:
+      type: int
+    inactive_user_delete_warn_text:
+      type: string
+    inactive_user_auto_delete:
+      type: int
+    inactive_user_preserve_content:
+      type: int
+    inactive_user_notify_delete:
+      type: int
+    inactive_user_delete_notify_text:
+      type: string
+    inactive_user_notify_delete_admin:
+      type: int

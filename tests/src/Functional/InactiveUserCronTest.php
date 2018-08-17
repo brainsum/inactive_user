@@ -30,15 +30,17 @@ class InactiveUserCronTest extends BrowserTestBase {
    */
   protected function setUp() {
     parent::setUp();
-    $this->user = $this->drupalCreateUser(['administer site configuration']);
+    $this->user = $this->drupalCreateUser();
   }
 
   /**
-   * Tests that the home page loads with a 200 response.
+   * Tests that the user was active a mont ago.
    */
-  public function runCron() {
-    print_r($this->user);
-    $this->drupalLogin($this->user);
+  public function testRunCronActiveMonthAgo() {
+    $this->user->set('created', REQUEST_TIME - ONE_YEAR);
+    $this->user->set('access', REQUEST_TIME - ONE_MONTH);
+    $this->user->save();
+    $this->container->get('inactive_user.notify')->runCron(TRUE);
   }
 
 }
