@@ -3,7 +3,6 @@
 namespace Drupal\Tests\inactive_user\Functional;
 
 use Drupal\Tests\BrowserTestBase;
-use Drupal\Core\Url;
 
 /**
  * Simple test to ensure that main page loads with module enabled.
@@ -31,14 +30,13 @@ class InactiveUserCronTest extends BrowserTestBase {
    */
   protected function setUp() {
     parent::setUp();
-
+    $this->user = $this->drupalCreateUser(['administer site configuration']);
   }
 
   /**
    * Tests that the home page loads with a 200 response.
    */
   public function runCron() {
-    $this->user = $this->drupalCreateUser(['administer site configuration']);
     print_r($this->user);
     $this->drupalLogin($this->user);
   }
