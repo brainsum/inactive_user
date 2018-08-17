@@ -62,58 +62,29 @@ class InactiveUserService implements InactiveUserServiceInterface {
   protected $siteName;
 
   /**
-   * State service.
-   *
-   * @var Drupal\Core\State\StateInterface
-   */
-  protected $state;
-
-  /**
-   * Constructs a SessionManager object.
-   *
-   * @var \Drupal\Core\StringTranslation\SessionManagerInterface
-   */
-  protected $sessionManager;
-
-  /**
-   * Constructs a EntityTypeManager object.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityManager;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct() {
-
-  }
-
-  /**
    * Configure service dependencies.
    *
    * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
    *   The Container object.
    */
   public function configure(ContainerInterface $container) {
+    $this->serviceContainer = $container;
     $this->database = $container->get('database');
     $this->configFactory = $container->get('config.factory');
     $this->dateFormatter = $container->get('date.formatter');
     $this->loggerFactory = $container->get('logger.factory');
     $this->config = $this->configFactory->getEditable('inactive_user.inactiveuseradmin');
     $this->getSiteName();
-    $this->state = $container->get('state');
-    $this->sessionManager = $container->get('session_manager');
-    $this->entityManager = $container->get('entity_type.manager');
   }
 
   /**
    * {@inheritdoc}
    */
-  public function runCron() {
-    if ((REQUEST_TIME - $this->state->get('inactive_user_timestamp', 0)) >= DAY_MINUS_FIVE_MINUTES) {
-      $this->state->set('inactive_user_timestamp', REQUEST_TIME);
-
+  public function runCron(bool $test = FALSE) {
+    $state = $this->serviceContainer->get('state');
+    $last_run = $state->get('inactive_user_timestamp', 0);
+    if ($test || (REQUEST_TIME - $last_run) >= DAY_MINUS_FIVE_MINUTES) {
+      $state->set('inactive_user_timestamp', REQUEST_TIME);
       $this->resetAdminNotifications();
       $this->notifyAdmin();
       $this->notifyUser();
@@ -520,7 +491,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
             // $array = (array) $user;
             // TODO: look into which methode using for User entity deletion.
             // Prepare the userDelete function.
-            $account = $this->entityManager->getStorage('user')->load($user->uid);
+            $account = $this->serviceContainer->get('entity_type.manager')->getStorage('user')->load($user->uid);
             $account->delete();
 
             if ($this->config->get('inactive_user_notify_delete')) {
@@ -546,7 +517,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if ($adresses = $this->config->get('inactive_user_admin_email')) {
       return $adresses;
     }
-    $admin = $this->entityManager->getStorage('user')->load(1);
+    $admin = $this->serviceContainer->get('entity_type.manager')->getStorage('user')->load(1);
     return $admin->getEmail();
   }
 
@@ -610,8 +581,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     $url = Url::fromUserInput($base_url);
     $link = Link::fromTextAndUrl($base_url, $url);
 
-    $date_formatter = $this->serviceContainer->get('date.formatter');
-    $interval = $date_formatter->formatInterval($period);
+    $interval = $this->dateFormatter->formatInterval($period);
 
     if ($user_list) {
       $to = $this->inactiveUserAdminMail();
@@ -626,7 +596,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $to = $user->mail;
       $access = $this->t('never');
       if (!empty($user->access)) {
-        $access = $date_formatter->format($user->access, 'short');
+        $access = $this->dateFormatter->format($user->access, 'short');
       }
       $variables = [
         '%username' => $user->name,
@@ -703,7 +673,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
    *   The user object from query.
    */
   protected function deleteUser($user) {
-    $this->sessionManager->delete($user->id());
+    $this->serviceContainer->get('session_manager')->delete($user->id());
     db_delete('users')
       ->condition('uid', $user->uid)
       ->execute();

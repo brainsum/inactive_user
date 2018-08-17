@@ -9,8 +9,11 @@ interface InactiveUserServiceInterface {
 
   /**
    * Run cron function for execute inactive user processes.
+   *
+   * @param bool $test
+   *   Indicator for testing.
    */
-  public function runCron();
+  public function runCron(bool $test);
 
   /**
    * Reset notifications if recent user activity.
