@@ -782,8 +782,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
 
     $other = 0;
     if ($user_has_nodes + $user_has_comments == 0) {
-      // Define hook_inactive_user_with_content_alter(&$other) hook.
-      $this->serviceContainer->get('module_handler')->alter('inactive_user_with_content', $other);
+      // Define hook_inactive_user_with_content_alter(&$other, $uid) hook.
+      $this->serviceContainer->get('module_handler')->alter('inactive_user_with_content', $other, $uid);
     }
 
     return ($user_has_nodes + $user_has_comments + $other) > 0;
