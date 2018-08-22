@@ -767,20 +767,27 @@ class InactiveUserService implements InactiveUserServiceInterface {
    * {@inheritdoc}
    */
   public function inactiveUserWithContent($uid) {
-    $user_has_nodes = $this->database->select('node_field_data', 'n')
-      ->fields('n', ['uid'])
-      ->condition('n.uid', $uid)
-      ->countQuery()
-      ->execute()
-      ->fetchField();
-    $user_has_comments = $this->database->select('comment_field_data', 'c')
-      ->fields('c', ['uid'])
-      ->condition('c.uid', $uid)
-      ->countQuery()
-      ->execute()
-      ->fetchField();
-
+    $user_has_nodes = 0;
+    $user_has_comments = 0;
     $other = 0;
+    $module_handler = $this->serviceContainer->get('module_handler');
+    if ($module_handler->moduleExists('node')) {
+      $user_has_nodes = $this->database->select('node_field_data', 'n')
+        ->fields('n', ['uid'])
+        ->condition('n.uid', $uid)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+    }
+    if ($module_handler->moduleExists('comment')) {
+      $user_has_comments = $this->database->select('comment_field_data', 'c')
+        ->fields('c', ['uid'])
+        ->condition('c.uid', $uid)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+    }
+
     if ($user_has_nodes + $user_has_comments == 0) {
       // Define hook_inactive_user_with_content_alter(&$other, $uid) hook.
       $this->serviceContainer->get('module_handler')->alter('inactive_user_with_content', $other, $uid);
