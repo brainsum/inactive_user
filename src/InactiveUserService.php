@@ -4,6 +4,8 @@ namespace Drupal\inactive_user;
 
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Url;
+use Drupal\Core\Link;
 
 /**
  * Class InactiveUserService.
@@ -381,7 +383,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $query->isNotNull('warned_user_block_timestamp');
       $query->condition('warned_user_block_timestamp', REQUEST_TIME, '<');
 
-      // AND status is active
+      // AND status is active.
       $query->condition('u.status', 0, '<>');
       // AND is not admin or anonym user.
       $query->condition('u.uid', 1, '>');
@@ -516,7 +518,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       // particular query.
       $query->addTag('inactive_user');
       $query->addTag('warn_users_deleted');
-      dpq($query);
+
       $results = $query->execute();
 
       $mail_text = $this->getMailText('inactive_user_delete_warn_text');
@@ -592,7 +594,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       // particular query.
       $query->addTag('inactive_user');
       $query->addTag('delete_users');
-      dpq($query);
+
       $results = $query->execute();
 
       $mail_text = $this->getMailText('inactive_user_delete_notify_text');
@@ -702,8 +704,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
     }
 
     $base_url = $this->serviceContainer->get('request_stack')->getCurrentRequest()->getHost();
-    $url = \Drupal\Core\Url::fromUserInput("/");
-    $link = \Drupal\Core\Link::fromTextAndUrl($base_url, $url);
+    $url = Url::fromUserInput("/");
+    $link = Link::fromTextAndUrl($base_url, $url);
 
     $interval = $this->dateFormatter->formatInterval($period);
 
