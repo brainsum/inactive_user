@@ -32,7 +32,8 @@ define('TWO_YEARS', 60 * 60 * 24 * 2 * 365);
 /**
  * Implements hook_help().
  */
-function inactive_user_help($route_name, RouteMatchInterface $route_match) {
+function inactive_user_help($route_name,
+  RouteMatchInterface $route_match) {
   switch ($route_name) {
     // Main module help for the inactive_user module.
     case 'help.page.inactive_user':
@@ -101,5 +102,23 @@ function inactive_user_entity_base_field_info(EntityTypeInterface $entity_type) 
       ->setDescription(t('The user protected flag.'));
 
     return $fields;
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function inactive_user_mail($key,
+  &$message,
+  $params) {
+  $options = array(
+    'langcode' => $message['langcode'],
+  );
+  switch ($key) {
+    case 'inactive_user_notice':
+      $message['from'] = $params['from'];
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['message'];
+      break;
   }
 }

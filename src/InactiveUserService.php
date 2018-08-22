@@ -102,9 +102,13 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Reset notifications if recent user activity.
     $query = $this->database->select('users_field_data', 'u');
     $query->fields('u', ['uid', 'name']);
-    $query->condition('u.uid', [0, 1], 'not in');
+    // User is not admin or anonym.
+    $query->condition('u.uid', 1, '>');
+    // Has the admin been notified.
     $query->condition('u.notified_admin', 1);
+    // User activiti is after than week ago.
     $query->condition('u.access', REQUEST_TIME - ONE_WEEK, '>');
+
     $result = $query->execute()->fetchAllAssoc('uid');
     if (count($result) > 0) {
       foreach ($result as $record) {
@@ -125,19 +129,35 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if ($notify_time = $this->config->get('inactive_user_notify_admin')) {
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
+
+      // User is logged in and used the site.
+      // Last use is earlier than block notify time.
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
         ->condition('u.access', REQUEST_TIME - $notify_time, '<');
+
+      // User never logged in. User created earlier than notify time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
         ->condition('u.created', REQUEST_TIME - $notify_time, '<');
-      $query->orConditionGroup()
+
+      // Has not the admin been notified.
+      $or_condition1 = $query->orConditionGroup()
+        ->isNull('u.notified_admin')
+        ->condition('u.notified_admin', 0);
+
+      // User never logged in. User created earlier than notify time.
+      $or_condition2 = $query->orConditionGroup()
         ->condition($and_condition1)
         ->condition($and_condition2);
-      // Has not the admin been notified.
-      $query->condition('u.notified_admin', 0);
-      $query->condition('u.uid', [0, 1], 'not in');
+
+      // Add or condition groups to query.
+      $query->condition($or_condition1);
+      $query->condition($or_condition2);
+
+      // User is not admin or anonym.
+      $query->condition('u.uid', 1, '>');
 
       // Adds queryTag to identify this query in a custom module using the
       // hook_query_TAG_alter().
@@ -151,8 +171,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $results = $query->execute();
 
       $user_list = '';
+      $uids = [];
       foreach ($results as $user) {
-        $uids = [];
         if ($user->uid && ($user->access < (REQUEST_TIME - $notify_time))) {
           $uids[] = $user->uid;
           $user_list .= "$user->name ($user->mail) last active on " . $this->dateFormatter->format($user->access, 'large') . ".\n";
@@ -178,19 +198,35 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if ($notify_time = $this->config->get('inactive_user_notify')) {
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
+
+      // User is logged in and used the site.
+      // Last use is earlier than block notify time.
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
         ->condition('u.access', REQUEST_TIME - $notify_time, '<');
+
+      // OR user never logged in. User created earlier than notify time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
         ->condition('u.created', REQUEST_TIME - $notify_time, '<');
-      $query->orConditionGroup()
+
+      // AND has not the user been notified.
+      $or_condition1 = $query->orConditionGroup()
+        ->isNull('u.notified_user')
+        ->condition('u.notified_user', 0);
+
+      // Add above conditions to or condition group.
+      $or_condition2 = $query->orConditionGroup()
         ->condition($and_condition1)
         ->condition($and_condition2);
-      // Has not the admin been notified.
-      $query->condition('u.notified_user', 0);
-      $query->condition('u.uid', [0, 1], 'not in');
+
+      // Add or condition groups to query.
+      $query->condition($or_condition1);
+      $query->condition($or_condition2);
+
+      // AND user is not admin or anonym.
+      $query->condition('u.uid', 1, '>');
 
       // Adds queryTag to identify this query in a custom module using the
       // hook_query_TAG_alter().
@@ -204,8 +240,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $results = $query->execute();
 
       $mail_text = $this->getMailText('inactive_user_notify_text');
+      $uids = [];
       foreach ($results as $user) {
-        $uids = [];
         if ($user->uid && ($user->access < (REQUEST_TIME - $notify_time))) {
           $uids[] = $user->uid;
           $this->mail($this->t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $notify_time, $user, NULL);
@@ -230,19 +266,54 @@ class InactiveUserService implements InactiveUserServiceInterface {
       ($block_time = $this->config->get('inactive_user_auto_block'))) {
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid', 'name', 'mail', 'created', 'access']);
+
+      // User is logged in and used the site.
+      // Last use is earlier than block time + warn time.
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
         ->condition('u.access', REQUEST_TIME - $block_time + $warn_time, '<');
+      // AND last warn notify is earlier than NOW.
+      $sub_and1 = $and_condition1->andConditionGroup()
+        ->isNotNull('warned_user_block_timestamp')
+        ->condition('warned_user_block_timestamp', REQUEST_TIME, '<');
+      // OR never notified.
+      $sub_or1 = $and_condition1->orConditionGroup()
+        ->condition($sub_and1)
+        ->isNull('warned_user_block_timestamp')
+        ->condition('warned_user_block_timestamp', 0);
+      // Add or to condition group.
+      $and_condition1->condition($sub_or1);
+
+      // OR user never logged in.
+      // User created earlier than block time + warn time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
         ->condition('u.created', REQUEST_TIME - $block_time + $warn_time, '<');
-      $query->orConditionGroup()
+      // AND last warn notify is earlier than NOW.
+      $sub_and1 = $and_condition2->andConditionGroup()
+        ->isNotNull('warned_user_block_timestamp')
+        ->condition('warned_user_block_timestamp', REQUEST_TIME, '<');
+      // OR never notified.
+      $sub_or1 = $and_condition2->orConditionGroup()
+        ->condition($sub_and1)
+        ->isNull('warned_user_block_timestamp')
+        ->condition('warned_user_block_timestamp', 0);
+      // Add or to condition group.
+      $and_condition2->condition($sub_or1);
+
+      // Prepare or condition group from above groups.
+      $or_condition2 = $query->orConditionGroup()
         ->condition($and_condition1)
         ->condition($and_condition2);
-      $query->condition('u.warned_user_block_timestamp', 0, '>');
+      // Add or condition groups to query.
+      $query->condition($or_condition2);
+
+      // AND user status is active.
       $query->condition('u.status', 0, '<>');
-      $query->condition('u.uid', [0, 1], 'not in');
+
+      // AND user is not admin or anonym.
+      $query->condition('u.uid', 1, '>');
 
       // Adds queryTag to identify this query in a custom module using the
       // hook_query_TAG_alter().
@@ -258,7 +329,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $uids = [];
       $mail_text = $this->getMailText('inactive_user_block_warn_text');
       foreach ($results as $user) {
-        $uids[] = $user->id();
+        $uids[] = $user->uid;
         $this->mail($this->t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $warn_time, $user, NULL);
         $this->loggerFactory->get('user')->notice('user %user warned will be blocked due to inactivity', ['%user' => $user->name]);
       }
@@ -288,19 +359,32 @@ class InactiveUserService implements InactiveUserServiceInterface {
         'warned_user_block_timestamp',
         'notified_admin_block',
       ]);
+
+      // Logged in and used page. Last activity is before block time.
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
         ->condition('u.access', REQUEST_TIME - $block_time, '<');
+      // OR user never logged in. User created before block time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
         ->condition('u.created', REQUEST_TIME - $block_time, '<');
-      $query->orConditionGroup()
+
+      // Prepare or condition from abowe.
+      $or_condition = $query->orConditionGroup()
         ->condition($and_condition1)
         ->condition($and_condition2);
-      $query->condition('u.notified_user_block', 0);
+      // Add or condition to query.
+      $query->condition($or_condition);
+
+      // AND don't block user yet if we sent a warning and it hasn't expired.
+      $query->isNotNull('warned_user_block_timestamp');
+      $query->condition('warned_user_block_timestamp', REQUEST_TIME, '<');
+
+      // AND status is active
       $query->condition('u.status', 0, '<>');
-      $query->condition('u.uid', [0, 1], 'not in');
+      // AND is not admin or anonym user.
+      $query->condition('u.uid', 1, '>');
 
       // Adds queryTag to identify this query in a custom module using the
       // hook_query_TAG_alter().
@@ -321,28 +405,23 @@ class InactiveUserService implements InactiveUserServiceInterface {
 
       $user_list = '';
       foreach ($results as $user) {
-        // Don't block user yet if we sent a warning and it hasn't expired.
-        if ($user->uid &&
-          $user->warned_user_block_timestamp > REQUEST_TIME &&
-          ($user->access < (REQUEST_TIME - $block_time))) {
+        $inactive_uids[] = $user->uid;
 
-          $inactive_uids[] = $user->id();
+        // Notify user.
+        if ($this->config->get('inactive_user_notify_block')) {
+          $notified_uids[] = $user->uid;
+          $this->mail($this->t('[@sitename] Account blocked due to inactivity', ['@sitename' => $this->siteName]), $mail_text_user, $block_time, $user, NULL);
+          $this->loggerFactory->get('user')->notice('user %user blocked due to inactivity', ['%user' => $user->name]);
+        }
 
-          // Notify user.
-          if ($this->config->get('inactive_user_notify_block')) {
-            $notified_uids[] = $user->uid;
-            $this->mail($this->t('[@sitename] Account blocked due to inactivity', ['@sitename' => $this->siteName]), $mail_text_user, $block_time, $user, NULL);
-            $this->loggerFactory->get('user')->notice('user %user blocked due to inactivity', ['%user' => $user->name]);
-          }
-
-          // Notify admin.
-          if ($this->config->get('inactive_user_notify_block_admin')) {
-            if (empty($user->notified_admin_block)) {
-              $notify_admin_uids[] = $user->uid;
-              $user_list .= "$user->name ($user->mail) last active on " . $this->dateFormatter->format($user->access, 'large') . ".\n";
-            }
+        // Notify admin.
+        if ($this->config->get('inactive_user_notify_block_admin')) {
+          if (empty($user->notified_admin_block)) {
+            $notify_admin_uids[] = $user->uid;
+            $user_list .= "$user->name ($user->mail) last active on " . $this->dateFormatter->format($user->access, 'large') . ".\n";
           }
         }
+
         if (!empty($user_list)) {
           $this->mail($this->t('[@sitename] Blocked users', ['@sitename' => $this->siteName]), $mail_text_admin, $block_time, NULL, $user_list);
         }
@@ -383,17 +462,51 @@ class InactiveUserService implements InactiveUserServiceInterface {
         'access',
         'warned_user_delete_timestamp',
       ]);
+      // User is logged in and used the site.
+      // Last use is earlier than delete time + warn time.
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
         ->condition('u.access', REQUEST_TIME - $delete_time + $warn_time, '<');
+      // AND last warn notify is earlier than NOW.
+      $sub_and1 = $and_condition1->andConditionGroup()
+        ->isNotNull('warned_user_delete_timestamp')
+        ->condition('warned_user_delete_timestamp', REQUEST_TIME, '<');
+      // OR never notified.
+      $sub_or1 = $and_condition1->orConditionGroup()
+        ->condition($sub_and1)
+        ->isNull('warned_user_delete_timestamp')
+        ->condition('warned_user_delete_timestamp', 0);
+      // Add or to condition group.
+      $and_condition1->condition($sub_or1);
+
+      // OR user never logged in.
+      // User created earlier than delete time + warn time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
         ->condition('u.created', REQUEST_TIME - $delete_time + $warn_time, '<');
-      $query->orConditionGroup()
+      // AND last warn notify is earlier than NOW.
+      $sub_and1 = $and_condition2->andConditionGroup()
+        ->isNotNull('warned_user_delete_timestamp')
+        ->condition('warned_user_delete_timestamp', REQUEST_TIME, '<');
+      // OR never notified.
+      $sub_or1 = $and_condition2->orConditionGroup()
+        ->condition($sub_and1)
+        ->isNull('warned_user_delete_timestamp')
+        ->condition('warned_user_delete_timestamp', 0);
+      // Add or to condition group.
+      $and_condition2->condition($sub_or1);
+
+      // Prepare or condition group from above groups.
+      $or_condition = $query->orConditionGroup()
         ->condition($and_condition1)
         ->condition($and_condition2);
-      $query->condition('u.uid', [0, 1], 'not in');
+
+      // Add or condition group to query.
+      $query->condition($or_condition);
+
+      // AND is not admin or anonym user.
+      $query->condition('u.uid', 1, '>');
 
       // Adds queryTag to identify this query in a custom module using the
       // hook_query_TAG_alter().
@@ -403,7 +516,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       // particular query.
       $query->addTag('inactive_user');
       $query->addTag('warn_users_deleted');
-
+      dpq($query);
       $results = $query->execute();
 
       $mail_text = $this->getMailText('inactive_user_delete_warn_text');
@@ -445,17 +558,31 @@ class InactiveUserService implements InactiveUserServiceInterface {
         'warned_user_delete_timestamp',
         'protected',
       ]);
+      // Logged in and used page. Last activity is before delete time.
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
         ->condition('u.access', REQUEST_TIME - $delete_time, '<');
+
+      // OR user never logged in. User created before delete time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
         ->condition('u.created', REQUEST_TIME - $delete_time, '<');
-      $query->orConditionGroup()
+
+      $or_condition = $query->orConditionGroup()
         ->condition($and_condition1)
         ->condition($and_condition2);
-      $query->condition('u.uid', [0, 1], 'not in');
+      $query->condition($or_condition);
+
+      // AND don't block user yet if we sent a warning and it hasn't expired.
+      $query->isNotNull('warned_user_delete_timestamp');
+      $query->condition('warned_user_delete_timestamp', REQUEST_TIME, '<');
+
+      // User is not protected.
+      $query->condition('protected', 0);
+
+      // AND is not admin or anonym user.
+      $query->condition('u.uid', 1, '>');
 
       // Adds queryTag to identify this query in a custom module using the
       // hook_query_TAG_alter().
@@ -465,16 +592,13 @@ class InactiveUserService implements InactiveUserServiceInterface {
       // particular query.
       $query->addTag('inactive_user');
       $query->addTag('delete_users');
-
+      dpq($query);
       $results = $query->execute();
 
       $mail_text = $this->getMailText('inactive_user_delete_notify_text');
       $user_list = '';
       foreach ($results as $user) {
-        $deleteable_user_results = ($user->warned_user_delete_timestamp < REQUEST_TIME && $user->protected != 1);
-        if ($user->uid &&
-          ((($this->config->get('inactive_user_auto_delete_warn') > 0) && !$deleteable_user_results) ||
-          (!$this->config->get('inactive_user_auto_delete_warn'))) && ($user->access < (REQUEST_TIME - $delete_time))) {
+        if ($this->config->get('inactive_user_auto_delete_warn') > 0) {
 
           $protect = $this->config->get('inactive_user_preserve_content') ?: 1;
           $is_protected = ($protect && $this->inactiveUserWithContent($user->uid));
@@ -578,8 +702,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
     }
 
     $base_url = $this->serviceContainer->get('request_stack')->getCurrentRequest()->getHost();
-    $url = Url::fromUserInput($base_url);
-    $link = Link::fromTextAndUrl($base_url, $url);
+    $url = \Drupal\Core\Url::fromUserInput("/");
+    $link = \Drupal\Core\Link::fromTextAndUrl($base_url, $url);
 
     $interval = $this->dateFormatter->formatInterval($period);
 
@@ -604,7 +728,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
         '%lastaccess' => $access,
         '%period' => $interval,
         '%sitename' => $site_name,
-        '%siteurl' => $link,
+        '%siteurl' => $link->toString(),
       ];
     }
     if (isset($to)) {
@@ -626,12 +750,13 @@ class InactiveUserService implements InactiveUserServiceInterface {
           'subject' => $subject,
           'message' => strtr($message, $variables),
           'headers' => $headers,
+          'from' => $from,
         ];
         $language = $this->serviceContainer->get('language.default')->get()->getId();
         if ($user = user_load_by_mail($recipient)) {
           $language = $user->getPreferredLangcode();
         }
-        drupal_mail('inactive_user', 'inactive_user_notice', $recipient, $language, $params, $from, TRUE);
+        $this->serviceContainer->get('plugin.manager.mail')->mail('inactive_user', 'inactive_user_notice', $recipient, $language, $params);
       }
     }
   }
