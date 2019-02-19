@@ -1,9 +1,9 @@
 {
-  "name": "drupal/inactive_user",
+  "name": "brainsum/inactive_user",
   "type": "drupal-module",
-  "description": "Inactive user module",
+  "description": "Fork of the Inactive user module",
   "keywords": ["Drupal"],
-  "license": "GPL-2.0+",
+  "license": "GPL-2.0-or-later",
   "homepage": "https://www.drupal.org/project/inactive_user",
   "minimum-stability": "dev",
   "support": {
