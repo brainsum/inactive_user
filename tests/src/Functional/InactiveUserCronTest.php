@@ -37,8 +37,9 @@ class InactiveUserCronTest extends BrowserTestBase {
    * Tests that the user was active a mont ago.
    */
   public function testRunCronActiveMonthAgo() {
-    $this->user->set('created', REQUEST_TIME - ONE_YEAR);
-    $this->user->set('access', REQUEST_TIME - ONE_MONTH);
+    $request_time = \Drupal::time()->getRequestTime();
+    $this->user->set('created', $request_time - ONE_YEAR);
+    $this->user->set('access', $request_time - ONE_MONTH);
     $this->user->save();
     $this->container->get('inactive_user.notify')->runCron(TRUE);
   }

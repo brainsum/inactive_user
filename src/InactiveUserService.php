@@ -85,8 +85,10 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function runCron(bool $test = FALSE) {
     $state = $this->serviceContainer->get('state');
     $last_run = $state->get('inactive_user_timestamp', 0);
-    if ($test || (REQUEST_TIME - $last_run) >= DAY_MINUS_FIVE_MINUTES) {
-      $state->set('inactive_user_timestamp', REQUEST_TIME);
+    $request_time = \Drupal::time()->getRequestTime();
+
+    if ($test || ($request_time - $last_run) >= DAY_MINUS_FIVE_MINUTES) {
+      $state->set('inactive_user_timestamp', $request_time);
       $this->resetAdminNotifications();
       $this->notifyAdmin();
       $this->notifyUser();
@@ -109,7 +111,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Has the admin been notified.
     $query->condition('u.notified_admin', 1);
     // User activiti is after than week ago.
-    $query->condition('u.access', REQUEST_TIME - ONE_WEEK, '>');
+    $request_time = \Drupal::time()->getRequestTime();
+    $query->condition('u.access', $request_time - ONE_WEEK, '>');
 
     $result = $query->execute()->fetchAllAssoc('uid');
     if (count($result) > 0) {
@@ -129,6 +132,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function notifyAdmin() {
     // Notify administrator of inactive user accounts.
     if ($notify_time = $this->config->get('inactive_user_notify_admin')) {
+      $request_time = \Drupal::time()->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
 
@@ -137,12 +141,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
-        ->condition('u.access', REQUEST_TIME - $notify_time, '<');
+        ->condition('u.access', $request_time - $notify_time, '<');
 
       // User never logged in. User created earlier than notify time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
-        ->condition('u.created', REQUEST_TIME - $notify_time, '<');
+        ->condition('u.created', $request_time - $notify_time, '<');
 
       // Has not the admin been notified.
       $or_condition1 = $query->orConditionGroup()
@@ -175,7 +179,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $user_list = '';
       $uids = [];
       foreach ($results as $user) {
-        if ($user->uid && ($user->access < (REQUEST_TIME - $notify_time))) {
+        if ($user->uid && ($user->access < ($request_time - $notify_time))) {
           $uids[] = $user->uid;
           $user_list .= "$user->name ($user->mail) last active on " . $this->dateFormatter->format($user->access, 'large') . ".\n";
         }
@@ -198,6 +202,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function notifyUser() {
     // Notify users that their account has been inactive.
     if ($notify_time = $this->config->get('inactive_user_notify')) {
+      $request_time = \Drupal::time()->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
 
@@ -206,12 +211,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
-        ->condition('u.access', REQUEST_TIME - $notify_time, '<');
+        ->condition('u.access', $request_time - $notify_time, '<');
 
       // OR user never logged in. User created earlier than notify time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
-        ->condition('u.created', REQUEST_TIME - $notify_time, '<');
+        ->condition('u.created', $request_time - $notify_time, '<');
 
       // AND has not the user been notified.
       $or_condition1 = $query->orConditionGroup()
@@ -244,7 +249,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $mail_text = $this->getMailText('inactive_user_notify_text');
       $uids = [];
       foreach ($results as $user) {
-        if ($user->uid && ($user->access < (REQUEST_TIME - $notify_time))) {
+        if ($user->uid && ($user->access < ($request_time - $notify_time))) {
           $uids[] = $user->uid;
           $this->mail($this->t('[@sitename] Account inactivity', ['@sitename' => $this->siteName]), $mail_text, $notify_time, $user, NULL);
           $this->loggerFactory->get('user')->notice('user %user notified of inactivity', ['%user' => $user->name]);
@@ -264,6 +269,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
    * {@inheritdoc}
    */
   public function warnedUserBlockTimestamp() {
+    $request_time = \Drupal::time()->getRequestTime();
     if (($warn_time = $this->config->get('inactive_user_auto_block_warn')) &&
       ($block_time = $this->config->get('inactive_user_auto_block'))) {
       $query = $this->database->select('users_field_data', 'u');
@@ -274,11 +280,11 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
-        ->condition('u.access', REQUEST_TIME - $block_time + $warn_time, '<');
+        ->condition('u.access', $request_time - $block_time + $warn_time, '<');
       // AND last warn notify is earlier than NOW.
       $sub_and1 = $and_condition1->andConditionGroup()
         ->isNotNull('warned_user_block_timestamp')
-        ->condition('warned_user_block_timestamp', REQUEST_TIME, '<');
+        ->condition('warned_user_block_timestamp', $request_time, '<');
       // OR never notified.
       $sub_or1 = $and_condition1->orConditionGroup()
         ->condition($sub_and1)
@@ -291,11 +297,11 @@ class InactiveUserService implements InactiveUserServiceInterface {
       // User created earlier than block time + warn time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
-        ->condition('u.created', REQUEST_TIME - $block_time + $warn_time, '<');
+        ->condition('u.created', $request_time - $block_time + $warn_time, '<');
       // AND last warn notify is earlier than NOW.
       $sub_and1 = $and_condition2->andConditionGroup()
         ->isNotNull('warned_user_block_timestamp')
-        ->condition('warned_user_block_timestamp', REQUEST_TIME, '<');
+        ->condition('warned_user_block_timestamp', $request_time, '<');
       // OR never notified.
       $sub_or1 = $and_condition2->orConditionGroup()
         ->condition($sub_and1)
@@ -339,7 +345,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     if (!empty($uids)) {
       // Update queries return rows updated.
       $query = $this->database->update('users_field_data');
-      $query->fields(['warned_user_block_timestamp' => REQUEST_TIME + $warn_time]);
+      $query->fields(['warned_user_block_timestamp' => $request_time + $warn_time]);
       $query->condition('uid', $uids, 'in');
       $query->execute();
     }
@@ -352,6 +358,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // TODO: check again to original code functionality.
     // Automatically block users.
     if ($block_time = $this->config->get('inactive_user_auto_block')) {
+      $request_time = \Drupal::time()->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid',
         'name',
@@ -366,11 +373,11 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
-        ->condition('u.access', REQUEST_TIME - $block_time, '<');
+        ->condition('u.access', $request_time - $block_time, '<');
       // OR user never logged in. User created before block time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
-        ->condition('u.created', REQUEST_TIME - $block_time, '<');
+        ->condition('u.created', $request_time - $block_time, '<');
 
       // Prepare or condition from abowe.
       $or_condition = $query->orConditionGroup()
@@ -381,7 +388,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
 
       // AND don't block user yet if we sent a warning and it hasn't expired.
       $query->isNotNull('warned_user_block_timestamp');
-      $query->condition('warned_user_block_timestamp', REQUEST_TIME, '<');
+      $query->condition('warned_user_block_timestamp', $request_time, '<');
 
       // AND status is active.
       $query->condition('u.status', 0, '<>');
@@ -456,7 +463,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Warn users when they are about to be deleted.
     if (($warn_time = $this->config->get('inactive_user_auto_delete_warn')) &&
       ($delete_time = $this->config->get('inactive_user_auto_delete'))) {
-      $query = db_select('users_field_data', 'u');
+      $request_time = \Drupal::time()->getRequestTime();
+      $query = \Drupal::database()->select('users_field_data', 'u');
       $query->fields('u', ['uid',
         'name',
         'mail',
@@ -469,11 +477,11 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
-        ->condition('u.access', REQUEST_TIME - $delete_time + $warn_time, '<');
+        ->condition('u.access', $request_time - $delete_time + $warn_time, '<');
       // AND last warn notify is earlier than NOW.
       $sub_and1 = $and_condition1->andConditionGroup()
         ->isNotNull('warned_user_delete_timestamp')
-        ->condition('warned_user_delete_timestamp', REQUEST_TIME, '<');
+        ->condition('warned_user_delete_timestamp', $request_time, '<');
       // OR never notified.
       $sub_or1 = $and_condition1->orConditionGroup()
         ->condition($sub_and1)
@@ -486,11 +494,11 @@ class InactiveUserService implements InactiveUserServiceInterface {
       // User created earlier than delete time + warn time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
-        ->condition('u.created', REQUEST_TIME - $delete_time + $warn_time, '<');
+        ->condition('u.created', $request_time - $delete_time + $warn_time, '<');
       // AND last warn notify is earlier than NOW.
       $sub_and1 = $and_condition2->andConditionGroup()
         ->isNotNull('warned_user_delete_timestamp')
-        ->condition('warned_user_delete_timestamp', REQUEST_TIME, '<');
+        ->condition('warned_user_delete_timestamp', $request_time, '<');
       // OR never notified.
       $sub_or1 = $and_condition2->orConditionGroup()
         ->condition($sub_and1)
@@ -524,13 +532,13 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $mail_text = $this->getMailText('inactive_user_delete_warn_text');
       foreach ($results as $user) {
         if (empty($user->warned_user_delete_timestamp) &&
-          ($user->access < (REQUEST_TIME - $warn_time))) {
+          ($user->access < ($request_time - $warn_time))) {
           $protected = ($this->config->get('inactive_user_preserve_content') && $this->inactiveUserWithContent($user->uid));
 
           // The db_update function returns the number of rows altered.
           $query = $this->database->update('users_field_data')
             ->fields([
-              'warned_user_delete_timestamp' => REQUEST_TIME + $warn_time,
+              'warned_user_delete_timestamp' => $request_time + $warn_time,
               'protected' => $protected ? 1 : 0,
             ])
             ->condition('uid', $user->uid)
@@ -551,6 +559,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function autoUserDelete() {
     // Automatically delete users.
     if ($delete_time = $this->config->get('inactive_user_auto_delete')) {
+      $request_time = \Drupal::time()->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid',
         'name',
@@ -564,12 +573,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
       $and_condition1 = $query->andConditionGroup()
         ->condition('u.access', 0, '<>')
         ->condition('u.login', 0, '<>')
-        ->condition('u.access', REQUEST_TIME - $delete_time, '<');
+        ->condition('u.access', $request_time - $delete_time, '<');
 
       // OR user never logged in. User created before delete time.
       $and_condition2 = $query->andConditionGroup()
         ->condition('u.login', 0)
-        ->condition('u.created', REQUEST_TIME - $delete_time, '<');
+        ->condition('u.created', $request_time - $delete_time, '<');
 
       $or_condition = $query->orConditionGroup()
         ->condition($and_condition1)
@@ -578,7 +587,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
 
       // AND don't block user yet if we sent a warning and it hasn't expired.
       $query->isNotNull('warned_user_delete_timestamp');
-      $query->condition('warned_user_delete_timestamp', REQUEST_TIME, '<');
+      $query->condition('warned_user_delete_timestamp', $request_time, '<');
 
       // User is not protected.
       $query->condition('protected', 0);
@@ -606,7 +615,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
           $is_protected = ($protect && $this->inactiveUserWithContent($user->uid));
           if ($is_protected) {
             // This is a protected user, mark as such.
-            $query = db_update('users_field_data')
+            $query = \Drupal::database()->update('users_field_data')
               ->fields(['protected' => $is_protected])
               ->condition('uid', $user->uid)
               ->execute();
@@ -814,16 +823,16 @@ class InactiveUserService implements InactiveUserServiceInterface {
    */
   protected function deleteUser($user) {
     $this->serviceContainer->get('session_manager')->delete($user->id());
-    db_delete('users')
+    \Drupal::database()->delete('users')
       ->condition('uid', $user->uid)
       ->execute();
-    db_delete('users_field_data')
+    \Drupal::database()->delete('users_field_data')
       ->condition('uid', $user->uid)
       ->execute();
-    db_delete('user__roles')
+    \Drupal::database()->delete('user__roles')
       ->condition('uid', $user->uid)
       ->execute();
-    db_delete('inactive_users')
+    \Drupal::database()->delete('inactive_users')
       ->condition('uid', $user->uid)
       ->execute();
 

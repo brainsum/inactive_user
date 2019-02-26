@@ -268,7 +268,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
     $mails = explode(',', $valid_email);
     $count = 0;
     foreach ($mails as $mail) {
-      if ($mail && !valid_email_address(trim($mail))) {
+      if ($mail && !\Drupal::service('email.validator')->isValid(trim($mail))) {
         $invalid[] = $mail;
         $count++;
       }
