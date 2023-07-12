@@ -2,10 +2,10 @@
 
 namespace Drupal\inactive_user;
 
-use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class InactiveUserService.

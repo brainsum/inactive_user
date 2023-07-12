@@ -2,12 +2,12 @@
 
 namespace Drupal\inactive_user\Form;
 
+use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\inactive_user\InactiveUserServiceInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class InactiveUserAdminForm.

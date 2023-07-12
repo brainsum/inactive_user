@@ -38,7 +38,9 @@ Credits:
 -------
  - Written by Jeremy Andrews <jeremy@kerneltrap.org>
  - Converted to 4.7 by Dries Knapen <drieske@hotmail.com>
- - Converted to 5.0 by Adam Cowell <adam.cowell@gmail.com> and Larry Garfield <larry@garfieldtech.com>
+ - Converted to 5.0 by Adam Cowell <adam.cowell@gmail.com> and Larry Garfield
+   <larry@garfieldtech.com>
  - Converted to 6.x by Tim Lievens and David Norman <http://deekayen.net>
- - Converted to 7.x by Larry Garfield <larry@garfieldtech.com> and David Norman <http://deekayen.net>
+ - Converted to 7.x by Larry Garfield <larry@garfieldtech.com> and David Norman
+   <http://deekayen.net>
  - Converted to 8.x by Jozsef Dudas <http://brainsum.com>
