@@ -435,7 +435,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
           $this->mail($this->t('[@sitename] Blocked users', ['@sitename' => $this->siteName]), $mail_text_admin, $block_time, NULL, $user_list);
         }
       }
-      $userStorage =  \Drupal::entityTypeManager()->getStorage('user');
+      $userStorage = \Drupal::entityTypeManager()->getStorage('user');
       if (!empty($inactive_uids)) {
         $query = $this->database->update('users_field_data')
           ->fields(['status' => 0])

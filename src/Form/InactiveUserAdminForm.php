@@ -32,7 +32,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
    * Constructs a new InactiveUserAdminForm object.
    */
   public function __construct(
-  ConfigFactoryInterface $config_factory,
+    ConfigFactoryInterface $config_factory,
     TimeInterface $datetime_time,
     InactiveUserServiceInterface $inactive_user_notify
   ) {
