@@ -5,6 +5,6 @@ inactive_user.inactive_user_admin_form:
     _form: '\Drupal\inactive_user\Form\InactiveUserAdminForm'
     _title: 'Inactive User'
   requirements:
-    _permission: 'administer inactive user'
+    _permission: 'change inactive user settings'
   options:
     _admin_route: TRUE
