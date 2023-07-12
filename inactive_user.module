@@ -4,30 +4,31 @@
  * @file
  * Contains inactive_user.module.
  */
+
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Entity\EntityTypeInterface;
 
-define('DAY_MINUS_FIVE_MINUTES', (60 * 60 * 23) + (60 * 55));
+define('INACTIVE_USER_DAY_MINUS_FIVE_MINUTES', (60 * 60 * 23) + (60 * 55));
 
-define('ONE_DAY', 60 * 60 * 24);
-define('TWO_DAYS', 60 * 60 * 24 * 2);
-define('THRE_DAYS', 60 * 60 * 24 * 3);
+define('INACTIVE_USER_ONE_DAY', 60 * 60 * 24);
+define('INACTIVE_USER_TWO_DAYS', 60 * 60 * 24 * 2);
+define('INACTIVE_USER_THRE_DAYS', 60 * 60 * 24 * 3);
 
-define('ONE_WEEK', 60 * 60 * 24 * 7);
-define('TWO_WEEKS', 60 * 60 * 24 * 2 * 7);
-define('THRE_WEEKS', 60 * 60 * 24 * 3 * 7);
-define('FOUR_WEEKS', 60 * 60 * 24 * 4 * 7);
+define('INACTIVE_USER_ONE_WEEK', 60 * 60 * 24 * 7);
+define('INACTIVE_USER_TWO_WEEKS', 60 * 60 * 24 * 2 * 7);
+define('INACTIVE_USER_THRE_WEEKS', 60 * 60 * 24 * 3 * 7);
+define('INACTIVE_USER_FOUR_WEEKS', 60 * 60 * 24 * 4 * 7);
 
-define('ONE_MONTH', 60 * 60 * 24 * 30);
-define('TWO_MONTHS', 60 * 60 * 24 * 2 * 30);
-define('THRE_MONTHS', 60 * 60 * 24 * 3 * 30);
-define('SIX_MONTHS', 60 * 60 * 24 * 6 * 30);
-define('NINE_MONTHS', 60 * 60 * 24 * 9 * 30);
+define('INACTIVE_USER_ONE_MONTH', 60 * 60 * 24 * 30);
+define('INACTIVE_USER_TWO_MONTHS', 60 * 60 * 24 * 2 * 30);
+define('INACTIVE_USER_THRE_MONTHS', 60 * 60 * 24 * 3 * 30);
+define('INACTIVE_USER_SIX_MONTHS', 60 * 60 * 24 * 6 * 30);
+define('INACTIVE_USER_NINE_MONTHS', 60 * 60 * 24 * 9 * 30);
 
-define('ONE_YEAR', 60 * 60 * 24 * 365);
-define('ONE_AND_HALF_YEARS', 60 * 60 * 24 * (365 + 182));
-define('TWO_YEARS', 60 * 60 * 24 * 2 * 365);
+define('INACTIVE_USER_ONE_YEAR', 60 * 60 * 24 * 365);
+define('INACTIVE_USER_ONE_AND_HALF_YEARS', 60 * 60 * 24 * (365 + 182));
+define('INACTIVE_USER_TWO_YEARS', 60 * 60 * 24 * 2 * 365);
 
 /**
  * Implements hook_help().
@@ -70,10 +71,6 @@ function inactive_user_cron() {
 
 /**
  * Implements hook_entity_base_field_info().
- *
- * @param EntityTypeInterface $entity_type
- *
- * @return array
  */
 function inactive_user_entity_base_field_info(EntityTypeInterface $entity_type) {
   if ($entity_type->id() === 'user') {
@@ -111,9 +108,9 @@ function inactive_user_entity_base_field_info(EntityTypeInterface $entity_type) 
 function inactive_user_mail($key,
   &$message,
   $params) {
-  $options = array(
+  $options = [
     'langcode' => $message['langcode'],
-  );
+  ];
   switch ($key) {
     case 'inactive_user_notice':
       $message['from'] = $params['from'];

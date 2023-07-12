@@ -8,4 +8,3 @@ inactive_user.inactive_user_admin_form:
     _permission: 'administer inactive user'
   options:
     _admin_route: TRUE
-

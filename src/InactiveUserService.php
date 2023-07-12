@@ -38,21 +38,21 @@ class InactiveUserService implements InactiveUserServiceInterface {
   /**
    * Drupal\Core\Datetime\DateFormatterInterface definition.
    *
-   * @var Drupal\Core\Datetime\DateFormatterInterface
+   * @var \Drupal\Core\Datetime\DateFormatterInterface
    */
   protected $dateFormatter;
 
   /**
    * Drupal\Core\Logger\LoggerChannelFactoryInterface definition.
    *
-   * @var Drupal\Core\Logger\LoggerChannelFactoryInterface
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
    */
   protected $loggerFactory;
 
   /**
    * Inactive user config.
    *
-   * @var Drupal\Core\Config\ConfigFactoryInterface
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $config;
 
@@ -87,7 +87,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     $last_run = $state->get('inactive_user_timestamp', 0);
     $request_time = \Drupal::time()->getRequestTime();
 
-    if ($test || ($request_time - $last_run) >= DAY_MINUS_FIVE_MINUTES) {
+    if ($test || ($request_time - $last_run) >= INACTIVE_USER_DAY_MINUS_FIVE_MINUTES) {
       $state->set('inactive_user_timestamp', $request_time);
       $this->resetAdminNotifications();
       $this->notifyAdmin();
@@ -112,7 +112,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     $query->condition('u.notified_admin', 1);
     // User activiti is after than week ago.
     $request_time = \Drupal::time()->getRequestTime();
-    $query->condition('u.access', $request_time - ONE_WEEK, '>');
+    $query->condition('u.access', $request_time - INACTIVE_USER_ONE_WEEK, '>');
 
     $result = $query->execute()->fetchAllAssoc('uid');
     if (count($result) > 0) {
@@ -355,7 +355,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
    * {@inheritdoc}
    */
   public function notifyUserBlock() {
-    // TODO: check again to original code functionality.
+    // @todo Fix problem that check again to original code functionality here.
     // Automatically block users.
     if ($block_time = $this->config->get('inactive_user_auto_block')) {
       $request_time = \Drupal::time()->getRequestTime();
@@ -623,9 +623,6 @@ class InactiveUserService implements InactiveUserServiceInterface {
           else {
             // Delete the user.
             // Not using user_delete() to send custom emails and watchdog.
-            // $array = (array) $user;
-            // TODO: look into which methode using for User entity deletion.
-            // Prepare the userDelete function.
             $account = $this->serviceContainer->get('entity_type.manager')->getStorage('user')->load($user->uid);
             $account->delete();
 
@@ -836,7 +833,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
       ->condition('uid', $user->uid)
       ->execute();
 
-    // TODO: invoke user delete.
+    // @todo Fix problem that user delete is not invoked here.
   }
 
 }

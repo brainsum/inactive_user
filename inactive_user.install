@@ -1,11 +1,12 @@
 <?php
 
 /**
- * @file inactive_user.php
- * 
- * author: dj 
- * created: 2018.07.30. - 20:03:58
- * 
+ * @file
+ * Install, update and uninstall functions for the inactive user module.
+ *
+ * Author: dj .
+ * Created: 2018.07.30. - 20:03:58 .
+ *
  * Description of inactive_user
  */
 
