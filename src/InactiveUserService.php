@@ -85,7 +85,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function runCron(bool $test = FALSE) {
     $state = $this->serviceContainer->get('state');
     $last_run = $state->get('inactive_user_timestamp', 0);
-    $request_time = \Drupal::time()->getRequestTime();
+    $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
 
     if ($test || ($request_time - $last_run) >= INACTIVE_USER_DAY_MINUS_FIVE_MINUTES) {
       $state->set('inactive_user_timestamp', $request_time);
@@ -106,12 +106,12 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Reset notifications if recent user activity.
     $query = $this->database->select('users_field_data', 'u');
     $query->fields('u', ['uid', 'name']);
-    // User is not admin or anonym.
+    // User is not admin or anonymous.
     $query->condition('u.uid', 1, '>');
     // Has the admin been notified.
     $query->condition('u.notified_admin', 1);
-    // User activiti is after than week ago.
-    $request_time = \Drupal::time()->getRequestTime();
+    // User activity is after than week ago.
+    $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
     $query->condition('u.access', $request_time - INACTIVE_USER_ONE_WEEK, '>');
 
     $result = $query->execute()->fetchAllAssoc('uid');
@@ -132,7 +132,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function notifyAdmin() {
     // Notify administrator of inactive user accounts.
     if ($notify_time = $this->config->get('inactive_user_notify_admin')) {
-      $request_time = \Drupal::time()->getRequestTime();
+      $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
 
@@ -202,7 +202,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function notifyUser() {
     // Notify users that their account has been inactive.
     if ($notify_time = $this->config->get('inactive_user_notify')) {
-      $request_time = \Drupal::time()->getRequestTime();
+      $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid', 'name', 'mail', 'access', 'created']);
 
@@ -269,7 +269,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
    * {@inheritdoc}
    */
   public function warnedUserBlockTimestamp() {
-    $request_time = \Drupal::time()->getRequestTime();
+    $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
     if (($warn_time = $this->config->get('inactive_user_auto_block_warn')) &&
       ($block_time = $this->config->get('inactive_user_auto_block'))) {
       $query = $this->database->select('users_field_data', 'u');
@@ -358,7 +358,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // @todo Fix problem that check again to original code functionality here.
     // Automatically block users.
     if ($block_time = $this->config->get('inactive_user_auto_block')) {
-      $request_time = \Drupal::time()->getRequestTime();
+      $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid',
         'name',
@@ -435,7 +435,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
           $this->mail($this->t('[@sitename] Blocked users', ['@sitename' => $this->siteName]), $mail_text_admin, $block_time, NULL, $user_list);
         }
       }
-      $userStorage = \Drupal::entityTypeManager()->getStorage('user');
+      $userStorage = $this->serviceContainer->get('entity_type.manager')->getStorage('user');
       if (!empty($inactive_uids)) {
         $query = $this->database->update('users_field_data')
           ->fields(['status' => 0])
@@ -467,8 +467,8 @@ class InactiveUserService implements InactiveUserServiceInterface {
     // Warn users when they are about to be deleted.
     if (($warn_time = $this->config->get('inactive_user_auto_delete_warn')) &&
       ($delete_time = $this->config->get('inactive_user_auto_delete'))) {
-      $request_time = \Drupal::time()->getRequestTime();
-      $query = \Drupal::database()->select('users_field_data', 'u');
+      $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
+      $query = $this->serviceContainer->get('database')->select('users_field_data', 'u');
       $query->fields('u', ['uid',
         'name',
         'mail',
@@ -563,7 +563,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
   public function autoUserDelete() {
     // Automatically delete users.
     if ($delete_time = $this->config->get('inactive_user_auto_delete')) {
-      $request_time = \Drupal::time()->getRequestTime();
+      $request_time = $this->serviceContainer->get('datetime.time')->getRequestTime();
       $query = $this->database->select('users_field_data', 'u');
       $query->fields('u', ['uid',
         'name',
@@ -619,7 +619,7 @@ class InactiveUserService implements InactiveUserServiceInterface {
           $is_protected = ($protect && $this->inactiveUserWithContent($user->uid));
           if ($is_protected) {
             // This is a protected user, mark as such.
-            $query = \Drupal::database()->update('users_field_data')
+            $query = $this->serviceContainer->get('database')->update('users_field_data')
               ->fields(['protected' => $is_protected])
               ->condition('uid', $user->uid)
               ->execute();
@@ -698,16 +698,17 @@ class InactiveUserService implements InactiveUserServiceInterface {
       case 'delete_notify_admin_text':
         return $this->t("Hello,\n\n  This automatic notification is to inform you that the following users have been automatically deleted due to inactivity on %sitename for more than %period:\n\n%userlist");
     }
+    return $key;
   }
 
   /**
    * {@inheritdoc}
    */
   public function mail($subject,
-    $message,
-    $period,
-    $user = NULL,
-    $user_list = NULL) {
+                       $message,
+                       $period,
+                       $user = NULL,
+                       $user_list = NULL) {
     $site_name = $this->siteName;
     if (empty($site_name)) {
       $site_name = 'Drupal';
@@ -823,21 +824,10 @@ class InactiveUserService implements InactiveUserServiceInterface {
    *   The user object from query.
    */
   protected function deleteUser($user) {
-    $this->serviceContainer->get('session_manager')->delete($user->id());
-    \Drupal::database()->delete('users')
-      ->condition('uid', $user->uid)
-      ->execute();
-    \Drupal::database()->delete('users_field_data')
-      ->condition('uid', $user->uid)
-      ->execute();
-    \Drupal::database()->delete('user__roles')
-      ->condition('uid', $user->uid)
-      ->execute();
-    \Drupal::database()->delete('inactive_users')
-      ->condition('uid', $user->uid)
-      ->execute();
-
-    // @todo Fix problem that user delete is not invoked here.
+    $user = $this->serviceContainer->get('entity_type.manager')->getStorage('user')->load($user->uid);
+    if ($user) {
+      $user->delete();
+    }
   }
 
 }
