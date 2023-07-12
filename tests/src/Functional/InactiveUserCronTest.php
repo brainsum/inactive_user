@@ -12,6 +12,13 @@ use Drupal\Tests\BrowserTestBase;
 class InactiveUserCronTest extends BrowserTestBase {
 
   /**
+   * The default theme to use.
+   *
+   * @var string
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Modules to enable.
    *
    * @var array
@@ -38,8 +45,8 @@ class InactiveUserCronTest extends BrowserTestBase {
    */
   public function testRunCronActiveMonthAgo() {
     $request_time = \Drupal::time()->getRequestTime();
-    $this->user->set('created', $request_time - ONE_YEAR);
-    $this->user->set('access', $request_time - ONE_MONTH);
+    $this->user->set('created', $request_time - INACTIVE_USER_ONE_YEAR);
+    $this->user->set('access', $request_time - INACTIVE_USER_ONE_MONTH);
     $this->user->save();
     $this->container->get('inactive_user.notify')->runCron(TRUE);
   }
