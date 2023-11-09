@@ -4,4 +4,3 @@ inactive_user.inactive_user_admin_form:
   description: 'Administer inactive users'
   parent: user.admin_index
   weight: 99
-

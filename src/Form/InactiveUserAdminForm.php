@@ -2,12 +2,12 @@
 
 namespace Drupal\inactive_user\Form;
 
+use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\inactive_user\InactiveUserServiceInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class InactiveUserAdminForm.
@@ -32,7 +32,7 @@ class InactiveUserAdminForm extends ConfigFormBase {
    * Constructs a new InactiveUserAdminForm object.
    */
   public function __construct(
-  ConfigFactoryInterface $config_factory,
+    ConfigFactoryInterface $config_factory,
     TimeInterface $datetime_time,
     InactiveUserServiceInterface $inactive_user_notify
   ) {
@@ -323,17 +323,17 @@ class InactiveUserAdminForm extends ConfigFormBase {
   protected function periodOptionList() {
     return [
       0 => 'disabled',
-      ONE_WEEK => $this->t('1 week'),
-      TWO_WEEKS => $this->t('2 weeks'),
-      THRE_WEEKS => $this->t('3 weeks'),
-      FOUR_WEEKS => $this->t('4 weeks'),
-      ONE_MONTH => $this->t('1 month'),
-      THRE_MONTHS => $this->t('3 months'),
-      SIX_MONTHS => $this->t('6 months'),
-      NINE_MONTHS => $this->t('9 months'),
-      ONE_YEAR => $this->t('1 year'),
-      ONE_AND_HALF_YEARS => $this->t('1.5 years'),
-      TWO_YEARS => $this->t('2 years'),
+      INACTIVE_USER_ONE_WEEK => $this->t('1 week'),
+      INACTIVE_USER_TWO_WEEKS => $this->t('2 weeks'),
+      INACTIVE_USER_THRE_WEEKS => $this->t('3 weeks'),
+      INACTIVE_USER_FOUR_WEEKS => $this->t('4 weeks'),
+      INACTIVE_USER_ONE_MONTH => $this->t('1 month'),
+      INACTIVE_USER_THRE_MONTHS => $this->t('3 months'),
+      INACTIVE_USER_SIX_MONTHS => $this->t('6 months'),
+      INACTIVE_USER_NINE_MONTHS => $this->t('9 months'),
+      INACTIVE_USER_ONE_YEAR => $this->t('1 year'),
+      INACTIVE_USER_ONE_AND_HALF_YEARS => $this->t('1.5 years'),
+      INACTIVE_USER_TWO_YEARS => $this->t('2 years'),
     ];
   }
 
@@ -346,13 +346,13 @@ class InactiveUserAdminForm extends ConfigFormBase {
   protected function warnPeriodOptionList() {
     return [
       0 => $this->t('Disabled'),
-      ONE_DAY => $this->t('1 day'),
-      TWO_DAYS => $this->t('2 days'),
-      THRE_DAYS => $this->t('3 days'),
-      ONE_WEEK => $this->t('7 days'),
-      TWO_WEEKS => $this->t('14 days'),
-      THRE_WEEKS => $this->t('21 days'),
-      ONE_MONTH => $this->t('30 days'),
+      INACTIVE_USER_ONE_DAY => $this->t('1 day'),
+      INACTIVE_USER_TWO_DAYS => $this->t('2 days'),
+      INACTIVE_USER_THRE_DAYS => $this->t('3 days'),
+      INACTIVE_USER_ONE_WEEK => $this->t('7 days'),
+      INACTIVE_USER_TWO_WEEKS => $this->t('14 days'),
+      INACTIVE_USER_THRE_WEEKS => $this->t('21 days'),
+      INACTIVE_USER_ONE_MONTH => $this->t('30 days'),
     ];
   }
 
