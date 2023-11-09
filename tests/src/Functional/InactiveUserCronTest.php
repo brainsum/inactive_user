@@ -19,7 +19,7 @@ class InactiveUserCronTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['inactive_user', 'user'];
+  protected static $modules = ['inactive_user', 'user'];
 
   /**
    * A user with permission to administer site configuration.
